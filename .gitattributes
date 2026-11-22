@@ -1,0 +1,13 @@
+* text=auto
+*.dart text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.cjs text eol=lf
+*.lock text eol=lf
+*.png binary
+*.ico binary
+*.mp4 binary

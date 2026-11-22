@@ -1,0 +1,33 @@
+name: Windows CI
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['docs/**', '**.md']
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.7'
+          channel: stable
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+      - run: dart format --output=none --set-exit-if-changed lib test integration_test
+      - run: flutter analyze
+      - run: flutter test --coverage
+      - name: Native playback and desktop smoke test
+        run: flutter test integration_test/playback_test.dart -d windows --dart-define="TEST_MEDIA=${{ github.workspace }}/test/fixtures/sample.mp4"
+      - run: flutter build windows --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PaperPlay-windows-x64-ci
+          path: build/windows/x64/runner/Release/
+          retention-days: 14

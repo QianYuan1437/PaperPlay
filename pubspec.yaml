@@ -1,0 +1,33 @@
+name: paperplay
+description: Wallpaper Engine video library and local media player for Windows.
+publish_to: none
+version: 1.0.0+1
+environment:
+  sdk: ^3.11.0
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  media_kit: ^1.2.6
+  media_kit_video: ^2.0.1
+  media_kit_libs_windows_video: ^1.0.11
+  window_manager: 0.5.1
+  tray_manager: 0.5.2
+  file_picker: ^10.3.10
+  path: ^1.9.1
+  path_provider: ^2.1.5
+  url_launcher: ^6.3.2
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/tray.ico
+    - assets/tray_playing.ico
+    - assets/logo.png
+    - assets/logo_playing.png
