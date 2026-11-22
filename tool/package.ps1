@@ -12,6 +12,18 @@ New-Item -ItemType Directory -Force $outputRoot | Out-Null
 foreach ($required in @('paperplay.exe', 'flutter_windows.dll', 'libmpv-2.dll', 'data')) {
   if (-not (Test-Path -LiteralPath (Join-Path $releaseRoot $required))) { throw "Incomplete bundle: $required" }
 }
+# App-local MSVC runtime makes the portable bundle usable on a clean Windows PC.
+$vsWhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+$vsInstall = & $vsWhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+if (-not $vsInstall) { throw 'Visual C++ redistributable directory not found' }
+$redistRoot = Join-Path $vsInstall 'VC/Redist/MSVC'
+$crtDirectory = Get-ChildItem -LiteralPath $redistRoot -Directory |
+  Where-Object { $_.Name -match '^\d+\.\d+\.\d+$' } |
+  Sort-Object { [version]$_.Name } -Descending |
+  ForEach-Object { Get-ChildItem -Path (Join-Path $_.FullName 'x64/Microsoft.VC*.CRT') -Directory -ErrorAction SilentlyContinue } |
+  Select-Object -First 1
+if (-not $crtDirectory) { throw 'Visual C++ x64 release CRT not found' }
+Copy-Item -Path (Join-Path $crtDirectory.FullName '*.dll') -Destination $releaseRoot
 Copy-Item -LiteralPath (Join-Path $projectRoot 'LICENSE'), (Join-Path $projectRoot 'THIRD_PARTY_NOTICES.md'), (Join-Path $projectRoot 'README.md') -Destination $releaseRoot
 $licenseRoot = Join-Path $releaseRoot 'licenses'
 New-Item -ItemType Directory -Force $licenseRoot | Out-Null
