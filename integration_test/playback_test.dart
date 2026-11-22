@@ -49,6 +49,14 @@ void main() {
       await tester.pumpWidget(PaperPlayApp(app: app, desktop: desktop));
       await tester.pumpAndSettle();
       await app.initializePlayback();
+      // Hosted Windows runners have no physical audio device. Decode audio into
+      // mpv's clocked null sink; keep real audio output for local desktop checks.
+      if (const bool.fromEnvironment('HEADLESS_AUDIO')) {
+        await (playback.player.platform as NativePlayer).setProperty(
+          'ao',
+          'null',
+        );
+      }
       await playback.player.setVolume(0);
       expect(tester.takeException(), isNull);
       final first = MediaEntry(
