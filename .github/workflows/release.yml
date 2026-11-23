@@ -7,7 +7,7 @@ on:
       version:
         description: 'Release version (X.Y.Z); creates a new immutable version tag'
         required: true
-        default: '1.0.1'
+        default: '1.0.2'
 permissions:
   contents: write
 concurrency:
@@ -55,6 +55,8 @@ jobs:
       - run: flutter pub get --enforce-lockfile
       - run: flutter analyze
       - run: flutter test
+      - name: Verify audio playback flicker fix
+        run: flutter test integration_test/interaction_test.dart -d windows --dart-define=HEADLESS_AUDIO=true --dart-define="TEST_MEDIA=${{ github.workspace }}/test/fixtures/sample.mp4"
       - run: flutter build windows --release --build-name=${{ steps.version.outputs.value }} --build-number=${{ github.run_number }} --dart-define=APP_VERSION=${{ steps.version.outputs.value }}
       - name: Package portable app and installer
         shell: pwsh

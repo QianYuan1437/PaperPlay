@@ -1,6 +1,7 @@
 #include <flutter/dart_project.h>
 #include <flutter/flutter_view_controller.h>
 #include <windows.h>
+#include <string>
 
 #include "flutter_window.h"
 #include "utils.h"
@@ -8,7 +9,17 @@
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
   // One writer for the per-user media library; reopen the existing window.
-  HANDLE singleton = ::CreateMutexW(nullptr, FALSE, L"Local\\PaperPlay.Desktop");
+  const wchar_t* mutex_name = L"Local\\PaperPlay.Desktop";
+#ifdef _DEBUG
+  // Native integration tests use a temporary library and may coexist with the
+  // user's release app. This opt-in is absent from production builds.
+  const std::wstring test_mutex = L"Local\\PaperPlay.IntegrationTest." +
+      std::to_wstring(::GetCurrentProcessId());
+  if (::GetEnvironmentVariableW(L"PAPERPLAY_TEST_INSTANCE", nullptr, 0) > 0) {
+    mutex_name = test_mutex.c_str();
+  }
+#endif
+  HANDLE singleton = ::CreateMutexW(nullptr, FALSE, mutex_name);
   if (singleton != nullptr && ::GetLastError() == ERROR_ALREADY_EXISTS) {
     HWND existing = ::FindWindowW(L"FLUTTER_RUNNER_WIN32_WINDOW", L"PaperPlay");
     if (existing != nullptr) {

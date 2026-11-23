@@ -49,7 +49,7 @@ void main() {
       final app = AppState(
         LibraryStore(File(p.join(temporary.path, 'library.json'))),
         playback,
-        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.2'}),
+        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.3'}),
       );
       await app.initialize();
       app.autoScan = false;
@@ -146,7 +146,7 @@ void main() {
           await tester.tap(find.text(label).first);
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull, reason: '$label at $size');
-          expect(find.byType(BlurToggle), findsOneWidget);
+          expect(find.byType(BlurToggle), findsWidgets);
           if (label == '概览') {
             final cards = [
               for (var i = 1; i <= 4; i++)
@@ -154,10 +154,10 @@ void main() {
             ];
             expect(cards.toSet(), {200.0});
             expect(find.byType(BackdropFilter), findsWidgets);
-            await tester.tap(find.byType(BlurToggle));
+            await tester.tap(find.byType(BlurToggle).first);
             await tester.pumpAndSettle();
             expect(find.byType(BackdropFilter), findsNothing);
-            await tester.tap(find.byType(BlurToggle));
+            await tester.tap(find.byType(BlurToggle).first);
             await tester.pumpAndSettle();
             expect(find.byType(BackdropFilter), findsWidgets);
           }
@@ -193,19 +193,46 @@ void main() {
           }
         }
       }
+      await tester.tap(find.byTooltip('播放').first);
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 200)),
+      );
+      await tester.pumpAndSettle();
+      expect(playback.playing, isTrue);
+      await tester.tap(find.byTooltip('暂停').first);
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 200)),
+      );
+      await tester.pumpAndSettle();
+      expect(playback.playing, isFalse);
+      await tester.tap(find.text('本地媒体').first);
+      await tester.pumpAndSettle();
+      expect(find.byType(BlurToggle), findsNWidgets(2));
+      await tester.tap(find.byType(BlurToggle).last);
+      await tester.pumpAndSettle();
+      for (final toggle in find.byType(BlurToggle).evaluate()) {
+        final chip = find.descendant(
+          of: find.byWidget(toggle.widget),
+          matching: find.byType(FilterChip),
+        );
+        expect(tester.widget<FilterChip>(chip).selected, isFalse);
+      }
+      await tester.tap(find.byType(BlurToggle).first);
+      await tester.pumpAndSettle();
+      expect(app.blurPreviews, isTrue);
       await tester.tap(find.byKey(const ValueKey('sidebar-version')));
       await tester.pumpAndSettle();
-      expect(find.text('发现新版本 v1.0.2'), findsOneWidget);
+      expect(find.text('发现新版本 v1.0.3'), findsOneWidget);
       expect(find.text('查看并下载更新'), findsOneWidget);
       await tester.ensureVisible(find.text('关于 PaperPlay'));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('sidebar-version')));
       await tester.pumpAndSettle();
       expect(find.text('检查更新').hitTestable(), findsOneWidget);
-      await tester.tap(find.byType(BlurToggle));
+      await tester.tap(find.byType(BlurToggle).first);
       await tester.pumpAndSettle();
       expect(app.blurPreviews, isFalse);
-      await tester.tap(find.byType(BlurToggle));
+      await tester.tap(find.byType(BlurToggle).first);
       await tester.pumpAndSettle();
       await app.save();
       expect((await app.store.load())['queue'], hasLength(2));

@@ -25,6 +25,8 @@ jobs:
       - run: flutter test --coverage
       - name: Native playback and desktop smoke test
         run: flutter test integration_test/playback_test.dart -d windows --dart-define=HEADLESS_AUDIO=true --dart-define="TEST_MEDIA=${{ github.workspace }}/test/fixtures/sample.mp4"
+      - name: Audio playback flicker and interaction regression
+        run: flutter test integration_test/interaction_test.dart -d windows --dart-define=HEADLESS_AUDIO=true --dart-define="TEST_MEDIA=${{ github.workspace }}/test/fixtures/sample.mp4"
       - run: flutter build windows --release
       - uses: actions/upload-artifact@v4
         with:

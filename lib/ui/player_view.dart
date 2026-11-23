@@ -5,6 +5,7 @@ import '../app_state.dart';
 import '../models/queue_order.dart';
 import '../services/playback_controller.dart';
 import 'widgets.dart';
+import 'playback_timeline.dart';
 
 const modeLabels = {
   PlayMode.sequential: '顺序播放',
@@ -140,46 +141,13 @@ class PlaybackBar extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              StreamBuilder<Duration>(
-                stream: playback.player.stream.position,
-                initialData: playback.player.state.position,
-                builder: (context, position) => StreamBuilder<Duration>(
-                  stream: playback.player.stream.duration,
-                  initialData: playback.player.state.duration,
-                  builder: (context, duration) {
-                    final max = (duration.data ?? Duration.zero).inMilliseconds
-                        .toDouble();
-                    return Row(
-                      children: [
-                        Text(
-                          clockLabel(position.data ?? Duration.zero),
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                        Expanded(
-                          child: SizedBox(
-                            height: 18,
-                            child: Slider(
-                              value:
-                                  (position.data?.inMilliseconds.toDouble() ??
-                                          0)
-                                      .clamp(0, max > 0 ? max : 1),
-                              max: max > 0 ? max : 1,
-                              onChanged: max <= 0
-                                  ? null
-                                  : (v) => playback.player.seek(
-                                      Duration(milliseconds: v.round()),
-                                    ),
-                            ),
-                          ),
-                        ),
-                        Text(
-                          clockLabel(duration.data ?? Duration.zero),
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                      ],
-                    );
-                  },
-                ),
+              PlaybackTimeline(
+                key: ValueKey('${item?.id}-${playback.index}'),
+                positionStream: playback.player.stream.position,
+                durationStream: playback.player.stream.duration,
+                initialPosition: playback.player.state.position,
+                initialDuration: playback.player.state.duration,
+                onSeek: playback.player.seek,
               ),
               const SizedBox(height: 8),
               Row(

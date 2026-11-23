@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../app_state.dart';
 import '../models/media_entry.dart';
 import 'widgets.dart';
+import 'blur_toggle.dart';
 
 Future<void> importFiles(AppState app, {bool folder = false}) async {
   try {
@@ -152,15 +153,7 @@ class _LibraryPageState extends State<LibraryPage> {
             runSpacing: 8,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              FilterChip(
-                label: const Text('模糊预览'),
-                selected: app.blurPreviews,
-                avatar: const Icon(Icons.blur_on_rounded, size: 16),
-                onSelected: (value) {
-                  app.blurPreviews = value;
-                  app.changed();
-                },
-              ),
+              BlurToggle(app: app),
               Text(
                 '${filtered.length} 个媒体${chosen.isEmpty ? '' : ' · 已选 ${chosen.length} 项'}',
                 style: const TextStyle(fontSize: 12),

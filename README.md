@@ -16,6 +16,12 @@ Windows 上的 **Wallpaper Engine 视频订阅管理器与本地影音播放器*
 - **检查更新**：设置中手动检查 GitHub 最新正式 Release；点击侧栏版本号可直接跳转并检查，发现更新后打开发布页下载；匿名 API 限流时自动使用官方 Release 页面作为备用检查路径。
 - **统一图标**：浅黄色背景、透明外缘、双齿轮轮廓与放大播放符号。应用内、任务栏与托盘图标按播放引擎状态显示三角 / 暂停；桌面快捷方式使用静态品牌图标。
 
+## v1.0.2
+
+修复纯音频播放期间模糊开关的渲染闪烁，统一所有模糊开关。进度拖动改为本地预览、松手后单次跳转，避免旧播放位置拉回滑块；进度条独立重绘，收藏等无关操作复用现有主题。
+
+原生回归测试逐帧比较静止按钮的像素，覆盖实际音频播放；组件测试验证拖动跳转、失效跳转恢复和周边页面重绘隔离。调试测试可设置 `PAPERPLAY_TEST_INSTANCE=1`，使用独立互斥锁与临时媒体库，与已运行的正式版共存；正式版仍保持单实例。
+
 ## 使用
 
 1. 下载安装版 EXE，或把便携 ZIP **完整解压**，运行 `paperplay.exe`。请保留全部 DLL 与 `data` 文件夹。
@@ -36,8 +42,9 @@ flutter pub get --enforce-lockfile
 flutter analyze
 flutter test
 flutter test integration_test/playback_test.dart -d windows --dart-define="TEST_MEDIA=$((Get-Location).Path)/test/fixtures/sample.mp4"
+flutter test integration_test/interaction_test.dart -d windows --dart-define="TEST_MEDIA=$((Get-Location).Path)/test/fixtures/sample.mp4"
 flutter build windows --release
-./tool/package.ps1 -Version 1.0.1
+./tool/package.ps1 -Version 1.0.2
 ```
 
 只保留 `windows/` 平台；Pages 是独立静态介绍站，不是 Flutter Web。测试视频由 FFmpeg 的 `testsrc2` 与 `sine` 合成，不包含用户订阅内容。
