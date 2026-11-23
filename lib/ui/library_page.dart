@@ -83,7 +83,7 @@ class _LibraryPageState extends State<LibraryPage> {
     final chosen = filtered.where((e) => selected.contains(e.id)).toList();
     final actionItems = chosen.isEmpty ? filtered : chosen;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 24, 32, 0),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -107,7 +107,7 @@ class _LibraryPageState extends State<LibraryPage> {
                 ),
             ],
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -266,10 +266,10 @@ class _LibraryPageState extends State<LibraryPage> {
                     padding: const EdgeInsets.only(bottom: 26),
                     gridDelegate:
                         const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 310,
-                          mainAxisExtent: 252,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
+                          maxCrossAxisExtent: 290,
+                          mainAxisExtent: 226,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
                         ),
                     itemCount: filtered.length,
                     itemBuilder: (context, i) {

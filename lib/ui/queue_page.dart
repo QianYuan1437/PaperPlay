@@ -12,7 +12,7 @@ class QueuePage extends StatelessWidget {
     return ListenableBuilder(
       listenable: playback,
       builder: (context, _) => Padding(
-        padding: const EdgeInsets.fromLTRB(32, 24, 32, 20),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -33,7 +33,7 @@ class QueuePage extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 12),
             Wrap(
               spacing: 12,
               runSpacing: 8,
@@ -60,7 +60,7 @@ class QueuePage extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 12),
             Expanded(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,

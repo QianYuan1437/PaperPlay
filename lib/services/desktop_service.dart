@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 import '../app_state.dart';
+import 'package:screen_retriever/screen_retriever.dart';
+import 'window_layout.dart';
 
 class DesktopService with WindowListener, TrayListener {
   DesktopService(this.app);
@@ -142,11 +144,24 @@ class DesktopService with WindowListener, TrayListener {
     }
   }
 
-  static const options = WindowOptions(
-    size: Size(1280, 840),
-    minimumSize: Size(900, 650),
-    center: true,
-    title: 'PaperPlay',
-    titleBarStyle: TitleBarStyle.hidden,
-  );
+  static Future<WindowOptions> windowOptions() async {
+    var area = const Size(1100, 750);
+    try {
+      final display = await screenRetriever.getPrimaryDisplay();
+      area = display.visibleSize ?? display.size;
+    } catch (_) {
+      // A compact fallback is also safe when display enumeration is unavailable.
+    }
+    final size = initialWindowSize(area);
+    return WindowOptions(
+      size: size,
+      minimumSize: Size(
+        size.width < 800 ? size.width : 800,
+        size.height < 560 ? size.height : 560,
+      ),
+      center: true,
+      title: 'PaperPlay',
+      titleBarStyle: TitleBarStyle.hidden,
+    );
+  }
 }

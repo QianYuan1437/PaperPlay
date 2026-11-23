@@ -26,7 +26,7 @@ final kControlShape = RoundedRectangleBorder(
 );
 
 /// Height shared by buttons, dropdowns and segmented buttons.
-const kControlHeight = 40.0;
+const kControlHeight = 36.0;
 
 /// Rounded highlight of an item inside a menu (inset from the menu edge).
 final kMenuItemShape = RoundedRectangleBorder(
@@ -61,6 +61,7 @@ ThemeData buildTheme(Brightness b, {int accent = kDefaultAccent}) {
   );
 
   return ThemeData(
+    visualDensity: VisualDensity.compact,
     useMaterial3: true,
     colorScheme: scheme,
     brightness: b,

@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../app_state.dart';
@@ -21,6 +22,7 @@ class PlayerView extends StatelessWidget {
     listenable: playback,
     builder: (context, _) {
       final item = playback.current;
+      final blur = PreviewPrivacy.of(context);
       return ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: AspectRatio(
@@ -50,31 +52,33 @@ class PlayerView extends StatelessWidget {
                     ),
                   ),
                   child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.headphones_rounded,
-                          size: compact ? 44 : 76,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(height: 16),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Text(
-                            item.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 17,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.headphones_rounded,
+                            size: compact ? 44 : 76,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(height: 16),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Text(
+                              item.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 17,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text('只听声音 · 让专注多一点'),
-                      ],
+                          const SizedBox(height: 8),
+                          const Text('只听声音 · 让专注多一点'),
+                        ],
+                      ),
                     ),
                   ),
                 )
@@ -82,7 +86,28 @@ class PlayerView extends StatelessWidget {
                   controller: playback.video,
                   pauseUponEnteringBackgroundMode: false,
                   resumeUponEnteringForegroundMode: false,
-                  controls: AdaptiveVideoControls,
+                  controls: (state) => Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (blur)
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: ClipRect(
+                              child: BackdropFilter(
+                                filter: ui.ImageFilter.blur(
+                                  sigmaX: 18,
+                                  sigmaY: 18,
+                                ),
+                                child: const ColoredBox(
+                                  color: Color(0x18000000),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      AdaptiveVideoControls(state),
+                    ],
+                  ),
                 ),
         ),
       );
@@ -111,7 +136,7 @@ class PlaybackBar extends StatelessWidget {
               ),
             ),
           ),
-          padding: const EdgeInsets.fromLTRB(22, 8, 22, 10),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

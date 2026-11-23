@@ -11,7 +11,9 @@ Windows 上的 **Wallpaper Engine 视频订阅管理器与本地影音播放器*
 - **视频播放**：使用 media_kit / libmpv，支持播放暂停、进度、音量、全屏。纯音频模式禁用视频轨道。托盘支持恢复窗口、暂停、切歌和退出。
 - **本地媒体**：导入文件或递归导入文件夹，支持 MP4、MKV、WebM、MOV、AVI 等视频和 MP3、FLAC、WAV、M4A、OGG 等音频，共享收藏与播放列表。
 - **统一外观**：八种主题色、浅色/深色/跟随系统；卡片、菜单、下拉项与对话框统一圆角。
-- **预览隐私**：设置和媒体列表中的「模糊预览」双向同步，模糊封面并持久保存；不会改变原始媒体文件。
+- **预览隐私**：标题栏、设置和媒体列表中的「模糊预览」同步，覆盖所有封面与视频画面，控件保持清晰并持久保存；不会改变原始媒体文件。
+- **紧凑布局**：默认 1040×700，按屏幕工作区域和 DPI 自动收缩；等高概览卡片、双栏设置，窄窗口自动适配。
+- **检查更新**：设置中手动检查 GitHub 最新正式 Release；点击侧栏版本号可直接跳转并检查，发现更新后打开发布页下载。
 - **统一图标**：浅黄色背景、透明外缘、双齿轮轮廓与放大播放符号。应用内、任务栏与托盘图标按播放引擎状态显示三角 / 暂停；桌面快捷方式使用静态品牌图标。
 
 ## 使用
@@ -35,7 +37,7 @@ flutter analyze
 flutter test
 flutter test integration_test/playback_test.dart -d windows --dart-define="TEST_MEDIA=$((Get-Location).Path)/test/fixtures/sample.mp4"
 flutter build windows --release
-./tool/package.ps1 -Version 1.0.0
+./tool/package.ps1 -Version 1.0.1
 ```
 
 只保留 `windows/` 平台；Pages 是独立静态介绍站，不是 Flutter Web。测试视频由 FFmpeg 的 `testsrc2` 与 `sine` 合成，不包含用户订阅内容。

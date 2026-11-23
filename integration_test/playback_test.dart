@@ -1,4 +1,8 @@
 import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:paperplay/services/update_service.dart';
+import 'package:paperplay/ui/blur_toggle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -19,6 +23,12 @@ void main() {
   testWidgets(
     'Windows native playback, audio-only, queue, tray and responsive shell',
     (tester) async {
+      final report = FlutterError.onError;
+      FlutterError.onError = (details) {
+        FlutterError.dumpErrorToConsole(details, forceReport: true);
+        report?.call(details);
+      };
+      addTearDown(() => FlutterError.onError = report);
       MediaKit.ensureInitialized();
       await windowManager.ensureInitialized();
       final temporary = await Directory.systemTemp.createTemp(
@@ -39,6 +49,7 @@ void main() {
       final app = AppState(
         LibraryStore(File(p.join(temporary.path, 'library.json'))),
         playback,
+        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.2'}),
       );
       await app.initialize();
       app.autoScan = false;
@@ -46,7 +57,13 @@ void main() {
       await desktop.initialize();
       await windowManager.setSize(const Size(1280, 900));
       await windowManager.show();
-      await tester.pumpWidget(PaperPlayApp(app: app, desktop: desktop));
+      final capture = GlobalKey();
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: capture,
+          child: PaperPlayApp(app: app, desktop: desktop),
+        ),
+      );
       await tester.pumpAndSettle();
       await app.initializePlayback();
       // Hosted Windows runners have no physical audio device. Decode audio into
@@ -116,7 +133,12 @@ void main() {
       await playback.player.pause();
       await desktop.syncPlaybackIndicator();
       expect(desktop.displayedPlaying, isFalse);
-      for (final size in [const Size(1280, 900), const Size(900, 650)]) {
+      await playback.setAudioOnly(false);
+      for (final size in [
+        const Size(1040, 700),
+        const Size(900, 650),
+        const Size(800, 560),
+      ]) {
         await windowManager.setSize(size);
         await tester.pumpAndSettle();
         for (final label in ['订阅库', '播放队列', '播放器', '本地媒体', '设置', '概览']) {
@@ -124,8 +146,67 @@ void main() {
           await tester.tap(find.text(label).first);
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull, reason: '$label at $size');
+          expect(find.byType(BlurToggle), findsOneWidget);
+          if (label == '概览') {
+            final cards = [
+              for (var i = 1; i <= 4; i++)
+                tester.getSize(find.byKey(ValueKey('overview-card-$i'))).height,
+            ];
+            expect(cards.toSet(), {200.0});
+            expect(find.byType(BackdropFilter), findsWidgets);
+            await tester.tap(find.byType(BlurToggle));
+            await tester.pumpAndSettle();
+            expect(find.byType(BackdropFilter), findsNothing);
+            await tester.tap(find.byType(BlurToggle));
+            await tester.pumpAndSettle();
+            expect(find.byType(BackdropFilter), findsWidgets);
+          }
+          if (label == '设置' && size.width == 1040) {
+            expect(
+              tester
+                  .getTopLeft(find.byKey(const ValueKey('settings-updates')))
+                  .dx,
+              greaterThan(
+                tester
+                    .getTopLeft(
+                      find.byKey(const ValueKey('settings-appearance')),
+                    )
+                    .dx,
+              ),
+            );
+          }
+          if (size.width == 1040 && (label == '概览' || label == '设置')) {
+            final folder = const String.fromEnvironment('SCREENSHOT_DIR');
+            if (folder.isNotEmpty) {
+              final boundary =
+                  capture.currentContext!.findRenderObject()!
+                      as RenderRepaintBoundary;
+              final image = await boundary.toImage(pixelRatio: 1);
+              final bytes = await image.toByteData(
+                format: ui.ImageByteFormat.png,
+              );
+              await File(
+                p.join(folder, label == '概览' ? 'overview.png' : 'settings.png'),
+              ).writeAsBytes(bytes!.buffer.asUint8List());
+              image.dispose();
+            }
+          }
         }
       }
+      await tester.tap(find.byKey(const ValueKey('sidebar-version')));
+      await tester.pumpAndSettle();
+      expect(find.text('发现新版本 v1.0.2'), findsOneWidget);
+      expect(find.text('查看并下载更新'), findsOneWidget);
+      await tester.ensureVisible(find.text('关于 PaperPlay'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('sidebar-version')));
+      await tester.pumpAndSettle();
+      expect(find.text('检查更新').hitTestable(), findsOneWidget);
+      await tester.tap(find.byType(BlurToggle));
+      await tester.pumpAndSettle();
+      expect(app.blurPreviews, isFalse);
+      await tester.tap(find.byType(BlurToggle));
+      await tester.pumpAndSettle();
       await app.save();
       expect((await app.store.load())['queue'], hasLength(2));
       expect((await app.store.load())['blurPreviews'], isTrue);

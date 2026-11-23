@@ -81,10 +81,13 @@ Future<void> launchPaperPlay() async {
   WidgetsBinding.instance.addPostFrameCallback((_) {
     unawaited(app.initializePlayback());
   });
-  await windowManager.waitUntilReadyToShow(DesktopService.options, () async {
-    await windowManager.show();
-    await windowManager.focus();
-  });
+  await windowManager.waitUntilReadyToShow(
+    await DesktopService.windowOptions(),
+    () async {
+      await windowManager.show();
+      await windowManager.focus();
+    },
+  );
   if (app.autoScan) unawaited(app.scan());
 }
 

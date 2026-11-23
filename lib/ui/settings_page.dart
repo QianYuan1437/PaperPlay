@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../app_state.dart';
 import '../app_info.dart';
+import '../services/update_service.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -11,11 +12,10 @@ class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key, required this.app});
   final AppState app;
   @override
-  Widget build(BuildContext context) => PageFrame(
-    title: '偏好设置',
-    subtitle: '让 PaperPlay 更像你的日常。',
-    children: [
+  Widget build(BuildContext context) {
+    final cards = <Widget>[
       SectionCard(
+        key: const ValueKey('settings-appearance'),
         title: '外观',
         icon: Icons.palette_outlined,
         child: Column(
@@ -38,12 +38,12 @@ class SettingsPage extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 10),
             const Text('主题色'),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Wrap(
-              spacing: 10,
-              runSpacing: 10,
+              spacing: 6,
+              runSpacing: 4,
               children: [
                 for (final preset in kAccentPresets)
                   ChoiceChip(
@@ -60,11 +60,12 @@ class SettingsPage extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 8),
             SwitchListTile(
+              dense: true,
               contentPadding: EdgeInsets.zero,
               title: const Text('模糊预览'),
-              subtitle: const Text('模糊媒体列表中的封面；与订阅库和本地媒体页面的开关同步'),
+              subtitle: const Text('同步模糊所有封面与视频画面，播放控件保持清晰'),
               value: app.blurPreviews,
               onChanged: (value) {
                 app.blurPreviews = value;
@@ -95,35 +96,44 @@ class SettingsPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text('自动读取 Steam 安装位置与 libraryfolders.vdf，支持多个磁盘中的订阅。'),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             if (app.detectedRoots.isEmpty && app.manualRoots.isEmpty)
               const Text('尚未检测到目录，可添加 Steam 根目录或 431960 文件夹。'),
-            for (final root in app.detectedRoots)
-              ListTile(
-                dense: true,
-                leading: const Icon(
-                  Icons.check_circle_outline_rounded,
-                  size: 20,
-                ),
-                title: SelectableText(root),
-                subtitle: const Text('已发现的订阅目录'),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: Text(
+                '扫描目录（${app.detectedRoots.length + app.manualRoots.length}）',
               ),
-            for (final root in app.manualRoots)
-              ListTile(
-                dense: true,
-                leading: const Icon(Icons.folder_outlined, size: 20),
-                title: SelectableText(root),
-                subtitle: const Text('手动添加'),
-                trailing: IconButton(
-                  tooltip: '移除扫描目录',
-                  onPressed: () {
-                    app.manualRoots.remove(root);
-                    app.changed();
-                  },
-                  icon: const Icon(Icons.close_rounded),
-                ),
-              ),
+              children: [
+                for (final root in app.detectedRoots)
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(
+                      Icons.check_circle_outline_rounded,
+                      size: 20,
+                    ),
+                    title: SelectableText(root),
+                    subtitle: const Text('已发现的订阅目录'),
+                  ),
+                for (final root in app.manualRoots)
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.folder_outlined, size: 20),
+                    title: SelectableText(root),
+                    subtitle: const Text('手动添加'),
+                    trailing: IconButton(
+                      tooltip: '移除扫描目录',
+                      onPressed: () {
+                        app.manualRoots.remove(root);
+                        app.changed();
+                      },
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ),
+              ],
+            ),
             SwitchListTile(
+              dense: true,
               contentPadding: EdgeInsets.zero,
               title: const Text('启动时自动扫描'),
               subtitle: const Text('扫描在后台进行，优先显示上次缓存的媒体库'),
@@ -155,6 +165,7 @@ class SettingsPage extends StatelessWidget {
         child: Column(
           children: [
             SwitchListTile(
+              dense: true,
               contentPadding: EdgeInsets.zero,
               title: const Text('关闭窗口时收起到托盘'),
               subtitle: const Text('音视频继续播放；从托盘菜单选择「退出」可完全关闭'),
@@ -165,6 +176,7 @@ class SettingsPage extends StatelessWidget {
               },
             ),
             const ListTile(
+              dense: true,
               contentPadding: EdgeInsets.zero,
               title: Text('纯音频模式'),
               subtitle: Text('关闭视频轨道，保留声音。播放器切换页面或收起到托盘后仍会继续播放。'),
@@ -186,7 +198,7 @@ class SettingsPage extends StatelessWidget {
             const Text(
               '基于 Flutter 与 media_kit / libmpv。界面主题衍生自 OpenSpeak。\n只管理本机已下载的媒体；scene、web 和 application 壁纸不参与视频扫描。',
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               children: [
@@ -214,6 +226,80 @@ class SettingsPage extends StatelessWidget {
           ],
         ),
       ),
-    ],
+    ];
+    Widget column(List<Widget> children) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final child in children) ...[child, const SizedBox(height: 12)],
+      ],
+    );
+    return PageFrame(
+      title: '偏好设置',
+      subtitle: '外观、媒体来源与软件更新。',
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final update = _UpdateCard(app: app);
+            if (constraints.maxWidth < 700) {
+              return column([update, cards[0], cards[2], cards[1], cards[3]]);
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: column([cards[0], cards[2]])),
+                const SizedBox(width: 12),
+                Expanded(child: column([update, cards[1], cards[3]])),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _UpdateCard extends StatelessWidget {
+  const _UpdateCard({required this.app});
+  final AppState app;
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: app.updates,
+    builder: (context, _) => SectionCard(
+      key: const ValueKey('settings-updates'),
+      title: '软件更新',
+      icon: Icons.system_update_alt_rounded,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('当前版本 v$appVersion · Windows x64'),
+          const SizedBox(height: 8),
+          Text(app.updates.message, key: const ValueKey('update-status')),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              FilledButton.tonalIcon(
+                onPressed: app.updates.status == UpdateStatus.checking
+                    ? null
+                    : app.updates.check,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: Text(
+                  app.updates.status == UpdateStatus.checking ? '检查中…' : '检查更新',
+                ),
+              ),
+              if (app.updates.status == UpdateStatus.available)
+                OutlinedButton(
+                  onPressed: () => launchUrl(
+                    app.updates.releaseUrl!,
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  child: const Text('查看并下载更新'),
+                ),
+            ],
+          ),
+        ],
+      ),
+    ),
   );
 }

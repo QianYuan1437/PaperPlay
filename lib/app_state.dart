@@ -4,14 +4,17 @@ import 'package:flutter/material.dart';
 import 'models/media_entry.dart';
 import 'models/queue_order.dart';
 import 'services/library_store.dart';
+import 'services/update_service.dart';
 import 'services/playback_controller.dart';
 import 'services/steam_scanner.dart';
 import 'ui/theme.dart';
 
 class AppState extends ChangeNotifier {
-  AppState(this.store, this.playback) {
+  AppState(this.store, this.playback, {UpdateService? updates})
+    : updates = updates ?? UpdateService() {
     playback.onPersist = persist;
   }
+  final UpdateService updates;
   final LibraryStore store;
   final PlaybackController playback;
   final SteamScanner scanner = SteamScanner();

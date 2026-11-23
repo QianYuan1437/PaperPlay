@@ -11,6 +11,7 @@ import 'queue_page.dart';
 import 'settings_page.dart';
 import 'widgets.dart';
 import 'brand_icon.dart';
+import 'blur_toggle.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key, required this.app, required this.desktop});
@@ -22,6 +23,7 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   int index = 0;
+  int settingsVisit = 0;
   void go(int value) => setState(() => index = value);
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -49,7 +51,10 @@ class _AppShellState extends State<AppShell> {
             ),
           ],
           children: [
-            PlayerView(playback: app.playback),
+            SizedBox(
+              height: (MediaQuery.sizeOf(context).height - 290).clamp(160, 720),
+              child: Center(child: PlayerView(playback: app.playback)),
+            ),
             ListenableBuilder(
               listenable: app.playback,
               builder: (context, _) => Card(
@@ -83,13 +88,13 @@ class _AppShellState extends State<AppShell> {
           source: MediaSource.local,
           openPlayer: () => go(3),
         ),
-        _ => SettingsPage(app: app),
+        _ => SettingsPage(key: ValueKey(settingsVisit), app: app),
       };
       return Scaffold(
         body: Column(
           children: [
             SizedBox(
-              height: 42,
+              height: 38,
               child: Row(
                 children: [
                   Expanded(
@@ -112,6 +117,7 @@ class _AppShellState extends State<AppShell> {
                       ),
                     ),
                   ),
+                  BlurToggle(app: app),
                   IconButton(
                     tooltip: '收起到托盘',
                     iconSize: 18,
@@ -133,7 +139,7 @@ class _AppShellState extends State<AppShell> {
               child: Row(
                 children: [
                   SizedBox(
-                    width: 104,
+                    width: 88,
                     child: Column(
                       children: [
                         if (MediaQuery.sizeOf(context).height >= 760) ...[
@@ -155,11 +161,11 @@ class _AppShellState extends State<AppShell> {
                         Expanded(
                           child: SingleChildScrollView(
                             child: SizedBox(
-                              height: 470,
+                              height: 400,
                               child: NavigationRail(
                                 selectedIndex: index,
                                 onDestinationSelected: go,
-                                minWidth: 104,
+                                minWidth: 88,
                                 groupAlignment: -1,
                                 labelType: NavigationRailLabelType.all,
                                 destinations: const [
@@ -196,11 +202,18 @@ class _AppShellState extends State<AppShell> {
                         ),
                         Padding(
                           padding: const EdgeInsets.only(bottom: 16),
-                          child: Text(
-                            'v$appVersion',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: colors.outline,
+                          child: TextButton(
+                            key: const ValueKey('sidebar-version'),
+                            onPressed: () {
+                              setState(() {
+                                index = 5;
+                                settingsVisit++;
+                              });
+                              app.updates.check();
+                            },
+                            child: const Text(
+                              'v$appVersion',
+                              style: TextStyle(fontSize: 11),
                             ),
                           ),
                         ),

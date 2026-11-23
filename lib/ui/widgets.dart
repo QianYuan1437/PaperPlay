@@ -18,7 +18,7 @@ class SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
     child: Padding(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -35,14 +35,14 @@ class SectionCard extends StatelessWidget {
                   title,
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
-                    fontSize: 17,
+                    fontSize: 15,
                   ),
                 ),
               ),
               ?trailing,
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 12),
           child,
         ],
       ),
@@ -64,11 +64,11 @@ class PageFrame extends StatelessWidget {
   final List<Widget> actions;
   @override
   Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.fromLTRB(32, 24, 32, 28),
+    padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
     children: [
       PageHeading(title: title, subtitle: subtitle, actions: actions),
-      const SizedBox(height: 24),
-      for (final child in children) ...[child, const SizedBox(height: 18)],
+      const SizedBox(height: 16),
+      for (final child in children) ...[child, const SizedBox(height: 12)],
     ],
   );
 }
@@ -93,7 +93,7 @@ class PageHeading extends StatelessWidget {
             Text(
               title,
               style: const TextStyle(
-                fontSize: 28,
+                fontSize: 24,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.8,
               ),
@@ -152,7 +152,7 @@ class EmptyState extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             title,
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
           Text(
