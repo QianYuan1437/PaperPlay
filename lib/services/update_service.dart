@@ -35,6 +35,38 @@ class UpdateService extends ChangeNotifier {
     return false;
   }
 
+  static Map<String, dynamic> releaseFromRedirect(String location) {
+    final uri = Uri.https('github.com').resolve(location);
+    final parts = uri.pathSegments;
+    if (uri.scheme != 'https' ||
+        uri.host != 'github.com' ||
+        parts.length != 5 ||
+        parts.take(4).join('/') != 'QianYuan1437/PaperPlay/releases/tag') {
+      throw const FormatException('Unexpected release redirect');
+    }
+    versionParts(parts.last);
+    return {'tag_name': parts.last, 'draft': false, 'prerelease': false};
+  }
+
+  static Future<Map<String, dynamic>> _fromReleasePage(
+    HttpClient client,
+  ) async {
+    // GitHub's official latest-release redirect does not use the API quota.
+    final request = await client.getUrl(
+      Uri.https('github.com', '/QianYuan1437/PaperPlay/releases/latest'),
+    );
+    request.followRedirects = false;
+    request.headers.set(HttpHeaders.userAgentHeader, 'PaperPlay/$appVersion');
+    final response = await request.close();
+    final location = response.headers.value(HttpHeaders.locationHeader);
+    await response.drain<void>();
+    if (![301, 302, 303, 307, 308].contains(response.statusCode) ||
+        location == null) {
+      throw const HttpException('GitHub 请求受限，请稍后重试');
+    }
+    return releaseFromRedirect(location);
+  }
+
   Future<void> check() async {
     if (status == UpdateStatus.checking) return;
     status = UpdateStatus.checking;
@@ -88,6 +120,10 @@ class UpdateService extends ChangeNotifier {
           'application/vnd.github+json',
         );
         final response = await request.close();
+        if (response.statusCode == 403 || response.statusCode == 429) {
+          await response.drain<void>();
+          return _fromReleasePage(client);
+        }
         if (response.statusCode != 200) {
           throw HttpException(switch (response.statusCode) {
             403 || 429 => 'GitHub 请求受限，请稍后重试',
