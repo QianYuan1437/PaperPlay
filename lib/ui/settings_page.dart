@@ -65,7 +65,6 @@ class SettingsPage extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               title: const Text('模糊预览'),
-              subtitle: const Text('同步模糊所有封面与视频画面，播放控件保持清晰'),
               value: app.blurPreviews,
               onChanged: (value) {
                 app.blurPreviews = value;
@@ -95,8 +94,6 @@ class SettingsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('自动读取 Steam 安装位置与 libraryfolders.vdf，支持多个磁盘中的订阅。'),
-            const SizedBox(height: 8),
             if (app.detectedRoots.isEmpty && app.manualRoots.isEmpty)
               const Text('尚未检测到目录，可添加 Steam 根目录或 431960 文件夹。'),
             ExpansionTile(
@@ -113,14 +110,12 @@ class SettingsPage extends StatelessWidget {
                       size: 20,
                     ),
                     title: SelectableText(root),
-                    subtitle: const Text('已发现的订阅目录'),
                   ),
                 for (final root in app.manualRoots)
                   ListTile(
                     dense: true,
                     leading: const Icon(Icons.folder_outlined, size: 20),
                     title: SelectableText(root),
-                    subtitle: const Text('手动添加'),
                     trailing: IconButton(
                       tooltip: '移除扫描目录',
                       onPressed: () {
@@ -136,7 +131,6 @@ class SettingsPage extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               title: const Text('启动时自动扫描'),
-              subtitle: const Text('扫描在后台进行，优先显示上次缓存的媒体库'),
               value: app.autoScan,
               onChanged: (v) {
                 app.autoScan = v;
@@ -168,7 +162,6 @@ class SettingsPage extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               title: const Text('关闭窗口时收起到托盘'),
-              subtitle: const Text('音视频继续播放；从托盘菜单选择「退出」可完全关闭'),
               value: app.closeToTray,
               onChanged: (v) {
                 app.closeToTray = v;
@@ -179,7 +172,6 @@ class SettingsPage extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               title: Text('纯音频模式'),
-              subtitle: Text('关闭视频轨道，保留声音。播放器切换页面或收起到托盘后仍会继续播放。'),
             ),
           ],
         ),

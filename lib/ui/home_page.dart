@@ -111,11 +111,7 @@ class HomePage extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${modeLabels[app.playback.mode]} · 视频也能只听声音',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
+
                     const Spacer(),
                   ],
                 ),
@@ -126,7 +122,7 @@ class HomePage extends StatelessWidget {
               '视频播放',
               Icons.play_circle_outline_rounded,
               '打开播放器 →',
-              Center(child: PlayerView(playback: app.playback, compact: true)),
+              PlayerView(playback: app.playback, compact: true, fill: true),
             ),
             card(
               4,
@@ -144,8 +140,7 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  const Text('电影、音乐、生活的片段。'),
-                  const SizedBox(height: 10),
+
                   Wrap(
                     spacing: 8,
                     runSpacing: 4,

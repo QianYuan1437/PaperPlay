@@ -15,102 +15,101 @@ const modeLabels = {
 };
 
 class PlayerView extends StatelessWidget {
-  const PlayerView({super.key, required this.playback, this.compact = false});
+  const PlayerView({
+    super.key,
+    required this.playback,
+    this.compact = false,
+    this.fill = false,
+  });
   final PlaybackController playback;
   final bool compact;
+  final bool fill;
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: playback,
     builder: (context, _) {
       final item = playback.current;
       final blur = PreviewPrivacy.of(context);
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: AspectRatio(
-          aspectRatio: 16 / 9,
-          child: item == null
-              ? Container(
-                  color: Theme.of(context).colorScheme.surfaceContainerLow,
-                  child: Center(
-                    child: EmptyState(
-                      icon: Icons.play_circle_outline_rounded,
-                      title: '给喜欢的画面，按下播放',
-                      description: '从订阅库或本地媒体选择视频',
-                      compact: compact,
-                    ),
-                  ),
-                )
-              : playback.audioOnly || item.isAudio
-              ? Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context).colorScheme.primaryContainer,
-                        Theme.of(context).colorScheme.surfaceContainerLow,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  child: Center(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.headphones_rounded,
-                            size: compact ? 44 : 76,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(height: 16),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: Text(
-                              item.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 17,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text('只听声音 · 让专注多一点'),
-                        ],
-                      ),
-                    ),
-                  ),
-                )
-              : Video(
-                  controller: playback.video,
-                  pauseUponEnteringBackgroundMode: false,
-                  resumeUponEnteringForegroundMode: false,
-                  controls: (state) => Stack(
-                    fit: StackFit.expand,
+      final content = item == null
+          ? Container(
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              child: Center(
+                child: EmptyState(
+                  icon: Icons.play_circle_outline_rounded,
+                  title: '',
+                  description: '',
+                  compact: compact,
+                ),
+              ),
+            )
+          : playback.audioOnly || item.isAudio
+          ? Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).colorScheme.primaryContainer,
+                    Theme.of(context).colorScheme.surfaceContainerLow,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (blur)
-                        Positioned.fill(
-                          child: IgnorePointer(
-                            child: ClipRect(
-                              child: BackdropFilter(
-                                filter: ui.ImageFilter.blur(
-                                  sigmaX: 18,
-                                  sigmaY: 18,
-                                ),
-                                child: const ColoredBox(
-                                  color: Color(0x18000000),
-                                ),
-                              ),
-                            ),
+                      Icon(
+                        Icons.headphones_rounded,
+                        size: compact ? 44 : 76,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(height: 16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          item.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 17,
                           ),
                         ),
-                      AdaptiveVideoControls(state),
+                      ),
                     ],
                   ),
                 ),
-        ),
+              ),
+            )
+          : Video(
+              controller: playback.video,
+              pauseUponEnteringBackgroundMode: false,
+              resumeUponEnteringForegroundMode: false,
+              controls: (state) => Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (blur)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: ClipRect(
+                          child: BackdropFilter(
+                            filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                            child: const ColoredBox(color: Color(0x18000000)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  AdaptiveVideoControls(state),
+                ],
+              ),
+            );
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: fill
+            ? SizedBox.expand(child: content)
+            : AspectRatio(aspectRatio: 16 / 9, child: content),
       );
     },
   );

@@ -49,7 +49,7 @@ void main() {
       final app = AppState(
         LibraryStore(File(p.join(temporary.path, 'library.json'))),
         playback,
-        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.4'}),
+        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.5'}),
       );
       await app.initialize();
       app.autoScan = false;
@@ -147,6 +147,25 @@ void main() {
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull, reason: '$label at $size');
           expect(find.byType(BlurToggle), findsWidgets);
+          if (label == '播放器') {
+            final toolbar = find.byKey(const ValueKey('player-toolbar'));
+            final audio = find.descendant(
+              of: toolbar,
+              matching: find.text('纯音频'),
+            );
+            final tray = find.descendant(
+              of: toolbar,
+              matching: find.text('收起到托盘'),
+            );
+            expect(
+              tester.getCenter(audio).dy,
+              closeTo(tester.getCenter(tray).dy, 2),
+            );
+            expect(
+              tester.getCenter(audio).dx,
+              lessThan(tester.getCenter(tray).dx),
+            );
+          }
           if (label == '概览') {
             final cards = [
               for (var i = 1; i <= 4; i++)
@@ -175,7 +194,7 @@ void main() {
               ),
             );
           }
-          if (size.width == 1040 && (label == '概览' || label == '设置')) {
+          if (size.width == 1040) {
             final folder = const String.fromEnvironment('SCREENSHOT_DIR');
             if (folder.isNotEmpty) {
               final boundary =
@@ -186,7 +205,7 @@ void main() {
                 format: ui.ImageByteFormat.png,
               );
               await File(
-                p.join(folder, label == '概览' ? 'overview.png' : 'settings.png'),
+                p.join(folder, '$label.png'),
               ).writeAsBytes(bytes!.buffer.asUint8List());
               image.dispose();
             }
@@ -222,7 +241,7 @@ void main() {
       expect(app.blurPreviews, isTrue);
       await tester.tap(find.byKey(const ValueKey('sidebar-version')));
       await tester.pumpAndSettle();
-      expect(find.text('发现新版本 v1.0.4'), findsOneWidget);
+      expect(find.text('发现新版本 v1.0.5'), findsOneWidget);
       expect(find.text('查看并下载更新'), findsOneWidget);
       await tester.ensureVisible(find.text('关于 PaperPlay'));
       await tester.pumpAndSettle();

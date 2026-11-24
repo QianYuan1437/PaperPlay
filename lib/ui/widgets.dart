@@ -67,7 +67,7 @@ class PageFrame extends StatelessWidget {
     padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
     children: [
       PageHeading(title: title, subtitle: subtitle, actions: actions),
-      const SizedBox(height: 16),
+      if (actions.isNotEmpty) const SizedBox(height: 10),
       for (final child in children) ...[child, const SizedBox(height: 12)],
     ],
   );
@@ -84,34 +84,9 @@ class PageHeading extends StatelessWidget {
   final String subtitle;
   final List<Widget> actions;
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.8,
-              ),
-            ),
-            const SizedBox(height: 7),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      ),
-      ...actions,
-    ],
-  );
+  Widget build(BuildContext context) => actions.isEmpty
+      ? const SizedBox.shrink()
+      : Row(mainAxisAlignment: MainAxisAlignment.end, children: actions);
 }
 
 class EmptyState extends StatelessWidget {
@@ -149,19 +124,21 @@ class EmptyState extends StatelessWidget {
               color: Theme.of(context).colorScheme.primary,
             ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            description,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+          if (title.isNotEmpty) const SizedBox(height: 16),
+          if (title.isNotEmpty)
+            Text(
+              title,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
-          ),
+          if (description.isNotEmpty) const SizedBox(height: 8),
+          if (description.isNotEmpty)
+            Text(
+              description,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
           if (action != null) ...[const SizedBox(height: 20), action!],
         ],
       ),

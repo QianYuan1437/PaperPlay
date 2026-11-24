@@ -40,47 +40,47 @@ class _AppShellState extends State<AppShell> {
           openPlayer: () => go(3),
         ),
         2 => QueuePage(app: app),
-        3 => PageFrame(
-          title: '正在播放',
-          subtitle: '此刻，只管享受。',
-          actions: [
-            OutlinedButton.icon(
-              onPressed: widget.desktop.hide,
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
-              label: const Text('收起到托盘'),
-            ),
-          ],
-          children: [
-            SizedBox(
-              height: (MediaQuery.sizeOf(context).height - 290).clamp(160, 720),
-              child: Center(child: PlayerView(playback: app.playback)),
-            ),
-            ListenableBuilder(
-              listenable: app.playback,
-              builder: (context, _) => Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          app.playback.current?.title ?? '在媒体库选择内容后开始播放',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
+        3 => Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ListenableBuilder(
+                listenable: app.playback,
+                builder: (context, _) => Row(
+                  key: const ValueKey('player-toolbar'),
+                  children: [
+                    Expanded(
+                      child: Text(
+                        app.playback.current?.title ?? '选择视频开始播放',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
-                      const SizedBox(width: 16),
-                      FilterChip(
-                        label: const Text('纯音频'),
-                        selected: app.playback.audioOnly,
-                        avatar: const Icon(Icons.headphones_rounded, size: 18),
-                        onSelected: app.playback.setAudioOnly,
+                    ),
+                    const SizedBox(width: 12),
+                    FilterChip(
+                      label: const Text('纯音频'),
+                      selected: app.playback.audioOnly,
+                      avatar: const Icon(Icons.headphones_rounded, size: 18),
+                      onSelected: app.playback.setAudioOnly,
+                    ),
+                    const SizedBox(width: 10),
+                    OutlinedButton.icon(
+                      onPressed: widget.desktop.hide,
+                      icon: const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 18,
                       ),
-                    ],
-                  ),
+                      label: const Text('收起到托盘'),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 10),
+              Expanded(child: PlayerView(playback: app.playback, fill: true)),
+            ],
+          ),
         ),
         4 => LibraryPage(
           key: const ValueKey('local'),
@@ -117,7 +117,10 @@ class _AppShellState extends State<AppShell> {
                       ),
                     ),
                   ),
-                  BlurToggle(app: app),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: BlurToggle(app: app),
+                  ),
                   IconButton(
                     tooltip: '收起到托盘',
                     iconSize: 18,

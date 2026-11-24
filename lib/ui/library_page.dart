@@ -49,6 +49,7 @@ class LibraryPage extends StatefulWidget {
 class _LibraryPageState extends State<LibraryPage> {
   final selected = <String>{};
   final search = TextEditingController();
+  final scroll = ScrollController();
   bool favoritesOnly = false;
   String sort = 'title';
   String kind = 'all';
@@ -57,6 +58,7 @@ class _LibraryPageState extends State<LibraryPage> {
   @override
   void dispose() {
     search.dispose();
+    scroll.dispose();
     super.dispose();
   }
 
@@ -88,27 +90,6 @@ class _LibraryPageState extends State<LibraryPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PageHeading(
-            title: wallpaper ? '订阅库' : '本地媒体',
-            subtitle: wallpaper
-                ? '喜欢的壁纸，随时重逢。无需启动 Wallpaper Engine。'
-                : '把散落的电影、片段和音乐，收进同一个地方。',
-            actions: [
-              if (wallpaper)
-                FilledButton.icon(
-                  onPressed: app.busy ? null : app.scan,
-                  icon: const Icon(Icons.refresh_rounded, size: 18),
-                  label: Text(app.busy ? '扫描中…' : '扫描订阅'),
-                )
-              else
-                FilledButton.icon(
-                  onPressed: app.busy ? null : () => importFiles(app),
-                  icon: const Icon(Icons.add_rounded, size: 18),
-                  label: const Text('导入文件'),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -128,7 +109,20 @@ class _LibraryPageState extends State<LibraryPage> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
+              FilledButton.icon(
+                onPressed: app.busy
+                    ? null
+                    : wallpaper
+                    ? app.scan
+                    : () => importFiles(app),
+                icon: Icon(
+                  wallpaper ? Icons.refresh_rounded : Icons.add_rounded,
+                  size: 18,
+                ),
+                label: Text(wallpaper ? (app.busy ? '扫描中…' : '扫描订阅') : '导入文件'),
+              ),
+              const SizedBox(width: 10),
               FilterChip(
                 label: const Text('我的收藏'),
                 avatar: const Icon(Icons.favorite_border_rounded, size: 16),
@@ -255,38 +249,53 @@ class _LibraryPageState extends State<LibraryPage> {
                           : null,
                     ),
                   )
-                : GridView.builder(
-                    padding: const EdgeInsets.only(bottom: 26),
-                    gridDelegate:
-                        const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 290,
-                          mainAxisExtent: 226,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                        ),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, i) {
-                      final item = filtered[i];
-                      return _MediaCard(
-                        entry: item,
-                        selected: selected.contains(item.id),
-                        favorite: app.favorites.contains(item.id),
-                        onSelect: () => setState(() {
-                          if (!selected.add(item.id)) selected.remove(item.id);
-                        }),
-                        onFavorite: () => app.favorite(item),
-                        onPlay: () {
-                          app.playback.play(filtered, start: i, asAudio: false);
-                          widget.openPlayer();
+                : ScrollConfiguration(
+                    behavior: ScrollConfiguration.of(
+                      context,
+                    ).copyWith(scrollbars: false),
+                    child: Scrollbar(
+                      controller: scroll,
+                      child: GridView.builder(
+                        controller: scroll,
+                        padding: const EdgeInsets.only(bottom: 26, right: 16),
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 290,
+                              mainAxisExtent: 226,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                            ),
+                        itemCount: filtered.length,
+                        itemBuilder: (context, i) {
+                          final item = filtered[i];
+                          return _MediaCard(
+                            entry: item,
+                            selected: selected.contains(item.id),
+                            favorite: app.favorites.contains(item.id),
+                            onSelect: () => setState(() {
+                              if (!selected.add(item.id))
+                                selected.remove(item.id);
+                            }),
+                            onFavorite: () => app.favorite(item),
+                            onPlay: () {
+                              app.playback.play(
+                                filtered,
+                                start: i,
+                                asAudio: false,
+                              );
+                              widget.openPlayer();
+                            },
+                            onAudio: () =>
+                                app.playback.play([item], asAudio: true),
+                            onEnqueue: () {
+                              app.playback.enqueue([item]);
+                              _toast('已加入播放队列');
+                            },
+                            onForget: () => _forget([item]),
+                          );
                         },
-                        onAudio: () => app.playback.play([item], asAudio: true),
-                        onEnqueue: () {
-                          app.playback.enqueue([item]);
-                          _toast('已加入播放队列');
-                        },
-                        onForget: () => _forget([item]),
-                      );
-                    },
+                      ),
+                    ),
                   ),
           ),
         ],
