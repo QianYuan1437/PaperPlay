@@ -197,6 +197,7 @@ void main() {
           if (size.width == 1040) {
             final folder = const String.fromEnvironment('SCREENSHOT_DIR');
             if (folder.isNotEmpty) {
+              await Directory(folder).create(recursive: true);
               final boundary =
                   capture.currentContext!.findRenderObject()!
                       as RenderRepaintBoundary;
