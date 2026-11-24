@@ -12,7 +12,7 @@ New-Item -ItemType Directory -Path $baselineRoot -Force | Out-Null
 $shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) 'PaperPlay/PaperPlay.lnk'
 $expectedId = 'QianYuan1437.PaperPlay'
 $exe = Join-Path $installRoot 'paperplay.exe'
-$wsh = New-Object -ComObject WScript.Shell
+. (Join-Path $PSScriptRoot 'read_windows_shortcut.ps1')
 
 function Run-Setup([string]$Path, [string[]]$Extra = @()) {
   $setupLog = Join-Path $testRoot ('setup-' + [guid]::NewGuid().ToString('N') + '.log')
@@ -23,10 +23,10 @@ function Run-Setup([string]$Path, [string[]]$Extra = @()) {
 }
 function Read-Link([string]$Path) {
   if (-not (Test-Path -LiteralPath $Path)) { throw "Missing shortcut: $Path" }
-  $link = $wsh.CreateShortcut($Path)
+  $link = [PaperPlayShortcut]::Read($Path)
   $shell = New-Object -ComObject Shell.Application
   $item = $shell.Namespace((Split-Path $Path)).ParseName((Split-Path $Path -Leaf))
-  return [pscustomobject]@{ Target=$link.TargetPath; WorkingDir=$link.WorkingDirectory; Icon=$link.IconLocation; AppId=$item.ExtendedProperty('System.AppUserModel.ID') }
+  return [pscustomobject]@{ Target=$link[0]; WorkingDir=$link[1]; Icon=$link[2]; AppId=$item.ExtendedProperty('System.AppUserModel.ID') }
 }
 function Assert-Link([string]$Path) {
   $link = Read-Link $Path
