@@ -15,7 +15,9 @@ $exe = Join-Path $installRoot 'paperplay.exe'
 $wsh = New-Object -ComObject WScript.Shell
 
 function Run-Setup([string]$Path, [string[]]$Extra = @()) {
-  $arguments = @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-') + $Extra
+  $setupLog = Join-Path $testRoot ('setup-' + [guid]::NewGuid().ToString('N') + '.log')
+  $arguments = @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', "/LOG=`"$setupLog`"") + $Extra
+  Write-Output "Running setup: $Path $arguments"
   $process = Start-Process -FilePath $Path -ArgumentList $arguments -WindowStyle Hidden -PassThru -Wait
   if ($process.ExitCode -ne 0) { throw "Installer failed: $($process.ExitCode)" }
 }
@@ -40,7 +42,9 @@ try {
   $oldInstaller = (Get-ChildItem -LiteralPath $baselineRoot -Filter '*.exe').FullName
   Run-Setup $oldInstaller @("/DIR=`"$installRoot`"", '/GROUP=PaperPlay')
   $oldLink = Read-Link $shortcut
-  if ($oldLink.Target -ne $exe) { throw 'Baseline did not use the requested installation directory' }
+  Write-Output "Expected executable: $exe"
+  Write-Output ($oldLink | ConvertTo-Json -Compress)
+  if ($oldLink.Target -ne $exe) { throw "Baseline directory mismatch: expected '$exe', got '$($oldLink.Target)'" }
   Write-Output "Baseline shortcut AppUserModelID: '$($oldLink.AppId)'"
   # No /DIR: this verifies that an update reuses the original custom directory.
   Run-Setup $installer
@@ -65,6 +69,11 @@ try {
   }
   if ($app.MainWindowHandle -eq 0 -or -not $app.Responding) { throw 'Installed application did not show a responsive window' }
   Write-Output 'PASS: legacy upgrade, retained install/shortcut paths, stable AppUserModelID and icon, repeat installation, foreign working directory launch'
+} catch {
+  Get-ChildItem -LiteralPath $testRoot -Filter 'setup-*.log' | ForEach-Object {
+    Get-Content -LiteralPath $_.FullName | Select-String 'command line|directory|shortcut|error|exception|filename' -CaseSensitive:$false | ForEach-Object { $_.Line }
+  }
+  throw
 } finally {
   # Only this disposable test installation may be stopped/uninstalled.
   Get-Process paperplay -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $exe } | Stop-Process
