@@ -9,7 +9,6 @@ import 'library_page.dart';
 import 'player_view.dart';
 import 'queue_page.dart';
 import 'settings_page.dart';
-import 'widgets.dart';
 import 'brand_icon.dart';
 import 'blur_toggle.dart';
 

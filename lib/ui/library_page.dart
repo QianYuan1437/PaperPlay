@@ -273,8 +273,9 @@ class _LibraryPageState extends State<LibraryPage> {
                             selected: selected.contains(item.id),
                             favorite: app.favorites.contains(item.id),
                             onSelect: () => setState(() {
-                              if (!selected.add(item.id))
+                              if (!selected.add(item.id)) {
                                 selected.remove(item.id);
+                              }
                             }),
                             onFavorite: () => app.favorite(item),
                             onPlay: () {
