@@ -255,46 +255,52 @@ class _LibraryPageState extends State<LibraryPage> {
                     ).copyWith(scrollbars: false),
                     child: Scrollbar(
                       controller: scroll,
-                      child: GridView.builder(
-                        controller: scroll,
-                        padding: const EdgeInsets.only(bottom: 26, right: 16),
-                        gridDelegate:
-                            const SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 290,
-                              mainAxisExtent: 226,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                            ),
-                        itemCount: filtered.length,
-                        itemBuilder: (context, i) {
-                          final item = filtered[i];
-                          return _MediaCard(
-                            entry: item,
-                            selected: selected.contains(item.id),
-                            favorite: app.favorites.contains(item.id),
-                            onSelect: () => setState(() {
-                              if (!selected.add(item.id)) {
-                                selected.remove(item.id);
-                              }
-                            }),
-                            onFavorite: () => app.favorite(item),
-                            onPlay: () {
-                              app.playback.play(
-                                filtered,
-                                start: i,
-                                asAudio: false,
-                              );
-                              widget.openPlayer();
-                            },
-                            onAudio: () =>
-                                app.playback.play([item], asAudio: true),
-                            onEnqueue: () {
-                              app.playback.enqueue([item]);
-                              _toast('已加入播放队列');
-                            },
-                            onForget: () => _forget([item]),
-                          );
-                        },
+                      child: ScrollEdgeFade(
+                        child: GridView.builder(
+                          controller: scroll,
+                          padding: const EdgeInsets.only(
+                            top: 16,
+                            bottom: 26,
+                            right: 16,
+                          ),
+                          gridDelegate:
+                              const SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: 290,
+                                mainAxisExtent: 226,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                              ),
+                          itemCount: filtered.length,
+                          itemBuilder: (context, i) {
+                            final item = filtered[i];
+                            return _MediaCard(
+                              entry: item,
+                              selected: selected.contains(item.id),
+                              favorite: app.favorites.contains(item.id),
+                              onSelect: () => setState(() {
+                                if (!selected.add(item.id)) {
+                                  selected.remove(item.id);
+                                }
+                              }),
+                              onFavorite: () => app.favorite(item),
+                              onPlay: () {
+                                app.playback.play(
+                                  filtered,
+                                  start: i,
+                                  asAudio: false,
+                                );
+                                widget.openPlayer();
+                              },
+                              onAudio: () =>
+                                  app.playback.play([item], asAudio: true),
+                              onEnqueue: () {
+                                app.playback.enqueue([item]);
+                                _toast('已加入播放队列');
+                              },
+                              onForget: () => _forget([item]),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),

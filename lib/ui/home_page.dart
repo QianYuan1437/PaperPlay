@@ -23,6 +23,10 @@ class HomePage extends StatelessWidget {
     children: [
       LayoutBuilder(
         builder: (context, constraints) {
+          final cardWidth = constraints.maxWidth < 650
+              ? constraints.maxWidth
+              : (constraints.maxWidth - 12) / 2;
+          final cardHeight = (cardWidth - 32) * 9 / 16 + 76;
           Widget card(
             int index,
             String title,
@@ -31,7 +35,7 @@ class HomePage extends StatelessWidget {
             Widget child,
           ) => SizedBox(
             key: ValueKey('overview-card-$index'),
-            height: 200,
+            height: cardHeight,
             child: SectionCard(
               title: title,
               icon: icon,
@@ -122,7 +126,17 @@ class HomePage extends StatelessWidget {
               '视频播放',
               Icons.play_circle_outline_rounded,
               '打开播放器 →',
-              PlayerView(playback: app.playback, compact: true, fill: true),
+              Center(
+                child: AspectRatio(
+                  key: const ValueKey('overview-video-frame'),
+                  aspectRatio: 16 / 9,
+                  child: PlayerView(
+                    playback: app.playback,
+                    compact: true,
+                    fill: true,
+                  ),
+                ),
+              ),
             ),
             card(
               4,

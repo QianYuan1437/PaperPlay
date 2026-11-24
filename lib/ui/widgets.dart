@@ -314,3 +314,35 @@ String clockLabel(Duration value) {
   final seconds = value.inSeconds.clamp(0, 999999);
   return '${seconds >= 3600 ? '${seconds ~/ 3600}:' : ''}${(seconds ~/ 60 % 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}';
 }
+
+/// Lightweight edge overlays leave scrolling and scrollbar hit targets intact.
+class ScrollEdgeFade extends StatelessWidget {
+  const ScrollEdgeFade({super.key, required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).scaffoldBackgroundColor;
+    Widget edge(bool top) => Positioned(
+      top: top ? 0 : null,
+      bottom: top ? null : 0,
+      left: 0,
+      right: 16,
+      height: 16,
+      child: IgnorePointer(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: top ? Alignment.topCenter : Alignment.bottomCenter,
+              end: top ? Alignment.bottomCenter : Alignment.topCenter,
+              colors: [color, color.withValues(alpha: 0)],
+            ),
+          ),
+        ),
+      ),
+    );
+    return Stack(
+      fit: StackFit.expand,
+      children: [child, edge(true), edge(false)],
+    );
+  }
+}

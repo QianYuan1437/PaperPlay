@@ -168,10 +168,16 @@ class SettingsPage extends StatelessWidget {
                 app.changed();
               },
             ),
-            const ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              title: Text('纯音频模式'),
+            ListenableBuilder(
+              listenable: app.playback,
+              builder: (context, _) => SwitchListTile(
+                key: const ValueKey('settings-audio-only'),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: const Text('纯音频模式'),
+                value: app.playback.audioOnly,
+                onChanged: app.playback.setAudioOnly,
+              ),
             ),
           ],
         ),
@@ -182,15 +188,6 @@ class SettingsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'PaperPlay $appVersion · Windows x64',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              '基于 Flutter 与 media_kit / libmpv。界面主题衍生自 OpenSpeak。\n只管理本机已下载的媒体；scene、web 和 application 壁纸不参与视频扫描。',
-            ),
-            const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               children: [
@@ -235,14 +232,21 @@ class SettingsPage extends StatelessWidget {
             if (constraints.maxWidth < 700) {
               return column([update, cards[0], cards[2], cards[1], cards[3]]);
             }
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: column([cards[0], cards[2]])),
-                const SizedBox(width: 12),
-                Expanded(child: column([update, cards[1], cards[3]])),
-              ],
+            Widget pair(Widget left, Widget right) => IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: left),
+                  const SizedBox(width: 12),
+                  Expanded(child: right),
+                ],
+              ),
             );
+            return column([
+              pair(cards[0], update),
+              pair(cards[2], cards[1]),
+              cards[3],
+            ]);
           },
         ),
       ],

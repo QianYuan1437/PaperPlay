@@ -49,7 +49,7 @@ void main() {
       final app = AppState(
         LibraryStore(File(p.join(temporary.path, 'library.json'))),
         playback,
-        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.5'}),
+        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.6'}),
       );
       await app.initialize();
       app.autoScan = false;
@@ -87,6 +87,14 @@ void main() {
         source: MediaSource.local,
       );
       app.local = [first];
+      app.subscriptions = List.generate(
+        24,
+        (i) => MediaEntry(
+          path: p.join(temporary.path, 'preview-$i.mp4'),
+          title: '预览 ${i + 1}',
+          source: MediaSource.wallpaper,
+        ),
+      );
       app.blurPreviews = true;
       app.changed();
       playback.setMode(PlayMode.sequential);
@@ -171,7 +179,11 @@ void main() {
               for (var i = 1; i <= 4; i++)
                 tester.getSize(find.byKey(ValueKey('overview-card-$i'))).height,
             ];
-            expect(cards.toSet(), {200.0});
+            expect(cards.toSet().length, 1);
+            final preview = tester.getSize(
+              find.byKey(const ValueKey('overview-video-frame')),
+            );
+            expect(preview.width / preview.height, closeTo(16 / 9, 0.01));
             expect(find.byType(BackdropFilter), findsWidgets);
             await tester.tap(find.byType(BlurToggle).first);
             await tester.pumpAndSettle();
@@ -181,6 +193,34 @@ void main() {
             expect(find.byType(BackdropFilter), findsWidgets);
           }
           if (label == '设置' && size.width == 1040) {
+            expect(
+              tester
+                  .getSize(find.byKey(const ValueKey('settings-appearance')))
+                  .height,
+              tester
+                  .getSize(find.byKey(const ValueKey('settings-updates')))
+                  .height,
+            );
+            final audioSwitch = find.byKey(
+              const ValueKey('settings-audio-only'),
+            );
+            await tester.ensureVisible(audioSwitch);
+            await tester.tap(audioSwitch);
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 300)),
+            );
+            await tester.pumpAndSettle();
+            expect(playback.audioOnly, isTrue);
+            expect(playback.player.state.track.video.id, 'no');
+            expect(find.byTooltip('切换到视频'), findsOneWidget);
+            await tester.tap(find.byTooltip('切换到视频'));
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 300)),
+            );
+            await tester.pumpAndSettle();
+            expect(tester.widget<SwitchListTile>(audioSwitch).value, isFalse);
+            expect(playback.player.state.track.video.id, isNot('no'));
+
             expect(
               tester
                   .getTopLeft(find.byKey(const ValueKey('settings-updates')))
@@ -242,7 +282,7 @@ void main() {
       expect(app.blurPreviews, isTrue);
       await tester.tap(find.byKey(const ValueKey('sidebar-version')));
       await tester.pumpAndSettle();
-      expect(find.text('发现新版本 v1.0.5'), findsOneWidget);
+      expect(find.text('发现新版本 v1.0.6'), findsOneWidget);
       expect(find.text('查看并下载更新'), findsOneWidget);
       await tester.ensureVisible(find.text('关于 PaperPlay'));
       await tester.pumpAndSettle();
