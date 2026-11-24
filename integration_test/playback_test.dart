@@ -49,7 +49,7 @@ void main() {
       final app = AppState(
         LibraryStore(File(p.join(temporary.path, 'library.json'))),
         playback,
-        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.3'}),
+        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.4'}),
       );
       await app.initialize();
       app.autoScan = false;
@@ -222,7 +222,7 @@ void main() {
       expect(app.blurPreviews, isTrue);
       await tester.tap(find.byKey(const ValueKey('sidebar-version')));
       await tester.pumpAndSettle();
-      expect(find.text('发现新版本 v1.0.3'), findsOneWidget);
+      expect(find.text('发现新版本 v1.0.4'), findsOneWidget);
       expect(find.text('查看并下载更新'), findsOneWidget);
       await tester.ensureVisible(find.text('关于 PaperPlay'));
       await tester.pumpAndSettle();

@@ -3,6 +3,7 @@
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
+#include "shell_identity.h"
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -13,6 +14,7 @@ bool FlutterWindow::OnCreate() {
   if (!Win32Window::OnCreate()) {
     return false;
   }
+  paperplay::SetWindowIdentity(GetHandle());
 
   RECT frame = GetClientArea();
 
@@ -40,6 +42,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  paperplay::ClearWindowIdentity(GetHandle());
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }

@@ -2,9 +2,11 @@
 #include <flutter/flutter_view_controller.h>
 #include <windows.h>
 #include <string>
+#include <filesystem>
 
 #include "flutter_window.h"
 #include "utils.h"
+#include "shell_identity.h"
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
@@ -38,8 +40,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // Initialize COM, so that it is available for use in the library and/or
   // plugins.
   ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+  paperplay::SetProcessIdentity();
 
-  flutter::DartProject project(L"data");
+  const auto data_path = std::filesystem::path(paperplay::ExecutablePath())
+                             .parent_path() / L"data";
+  flutter::DartProject project(data_path.wstring());
 
   std::vector<std::string> command_line_arguments =
       GetCommandLineArguments();

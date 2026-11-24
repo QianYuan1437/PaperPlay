@@ -7,7 +7,7 @@ on:
       version:
         description: 'Release version (X.Y.Z); creates a new immutable version tag'
         required: true
-        default: '1.0.2'
+        default: '1.0.3'
 permissions:
   contents: write
 concurrency:
@@ -52,6 +52,8 @@ jobs:
           flutter-version: '3.41.7'
           channel: stable
           cache: true
+      - name: Verify Windows shell identity
+        run: ./tool/test_shell_identity.ps1
       - run: flutter pub get --enforce-lockfile
       - run: flutter analyze
       - run: flutter test
@@ -61,6 +63,11 @@ jobs:
       - name: Package portable app and installer
         shell: pwsh
         run: ./tool/package.ps1 -Version '${{ steps.version.outputs.value }}'
+      - name: Verify installer upgrade and Start menu shortcut
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./tool/test_installer_upgrade.ps1 -InstallerPath 'dist/PaperPlay-${{ steps.version.outputs.value }}-windows-x64-setup.exe'
       - uses: actions/upload-artifact@v7
         with:
           name: PaperPlay-${{ steps.version.outputs.value }}-release
