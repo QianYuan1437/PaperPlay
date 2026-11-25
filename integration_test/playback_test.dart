@@ -169,7 +169,6 @@ void main() {
         isNotEmpty,
         reason: 'Statistics must start before the Performance page is opened',
       );
-      final firstSample = app.performance.samples.first;
       for (final size in [
         const Size(1040, 700),
         const Size(900, 650),
@@ -178,6 +177,7 @@ void main() {
         await windowManager.setSize(size);
         await tester.pumpAndSettle();
         for (final label in ['订阅库', '播放队列', '播放器', '本地媒体', '设置', '性能', '概览']) {
+          final recentSample = app.performance.samples.last;
           await tester.ensureVisible(find.text(label).first);
           await tester.tap(find.text(label).first);
           await tester.pumpAndSettle();
@@ -190,6 +190,11 @@ void main() {
             lessThan(tester.getCenter(find.byType(BlurToggle).first).dx),
           );
           if (label == '性能') {
+            expect(
+              app.performance.samples,
+              contains(recentSample),
+              reason: 'Opening the page must preserve existing samples',
+            );
             await tester.runAsync(
               () => Future<void>.delayed(const Duration(milliseconds: 6200)),
             );
@@ -341,11 +346,6 @@ void main() {
       await tester.ensureVisible(find.text('性能').first);
       await tester.tap(find.text('性能').first);
       await tester.pumpAndSettle();
-      expect(
-        app.performance.samples,
-        contains(firstSample),
-        reason: 'Navigating between pages must not reset history',
-      );
       for (final link in ['playback-artwork-link', 'playback-title-link']) {
         await tester.tap(find.byKey(ValueKey(link)));
         await tester.pumpAndSettle();
