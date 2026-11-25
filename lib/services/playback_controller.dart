@@ -40,6 +40,8 @@ class PlaybackController extends ChangeNotifier {
   MediaEntry? get current =>
       queue.isEmpty ? null : queue[index.clamp(0, queue.length - 1)];
   bool get playing => player.state.playing;
+  bool get mediaLoaded => _loaded;
+  bool get opening => _opening;
 
   Future<void> _serial(Future<void> Function() action) {
     final task = _pending.then((_) async {
@@ -76,6 +78,7 @@ class PlaybackController extends ChangeNotifier {
     _opening = true;
     _loaded = false;
     error = null;
+    notifyListeners();
     try {
       // A broken/moved file cannot cause an endless repeat-one retry loop.
       for (var attempt = 0; attempt < queue.length; attempt++) {

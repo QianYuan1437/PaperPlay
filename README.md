@@ -16,6 +16,10 @@ Windows 上的 **Wallpaper Engine 视频订阅管理器与本地影音播放器*
 - **检查更新**：设置中手动检查 GitHub 最新正式 Release；点击侧栏版本号可直接跳转并检查，发现更新后打开发布页下载；匿名 API 限流时自动使用官方 Release 页面作为备用检查路径。
 - **统一图标**：浅黄色背景、透明外缘、双齿轮轮廓与放大播放符号。应用内、任务栏与托盘图标按播放引擎状态显示三角 / 暂停；桌面快捷方式使用静态品牌图标。
 
+## v1.0.6
+
+修复恢复队列后先点击视频区域播放按钮导致黑屏的问题；首次播放统一经过文件载入，加载期间防止重复点击。设置行增加留白和高度，圆角悬停区域完整覆盖文字。
+
 ## v1.0.5
 
 设置卡片同行等高，关于卡片仅保留操作入口；纯音频开关与播放栏双向同步。概览视频恢复 16:9，媒体库上下滚动边缘采用柔和渐变。
@@ -60,7 +64,7 @@ flutter test
 flutter test integration_test/playback_test.dart -d windows --dart-define="TEST_MEDIA=$((Get-Location).Path)/test/fixtures/sample.mp4"
 flutter test integration_test/interaction_test.dart -d windows --dart-define="TEST_MEDIA=$((Get-Location).Path)/test/fixtures/sample.mp4"
 flutter build windows --release
-./tool/package.ps1 -Version 1.0.5
+./tool/package.ps1 -Version 1.0.6
 ```
 
 只保留 `windows/` 平台；Pages 是独立静态介绍站，不是 Flutter Web。测试视频由 FFmpeg 的 `testsrc2` 与 `sine` 合成，不包含用户订阅内容。

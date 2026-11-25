@@ -1,1 +1,1 @@
-const appVersion = String.fromEnvironment('APP_VERSION', defaultValue: '1.0.5');
+const appVersion = String.fromEnvironment('APP_VERSION', defaultValue: '1.0.6');

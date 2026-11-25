@@ -101,7 +101,31 @@ class PlayerView extends StatelessWidget {
                         ),
                       ),
                     ),
-                  AdaptiveVideoControls(state),
+                  if (!playback.mediaLoaded)
+                    Positioned.fill(
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          MediaArt(entry: item, radius: 0),
+                          Center(
+                            child: FilledButton.icon(
+                              key: const ValueKey('load-restored-video'),
+                              onPressed: playback.opening
+                                  ? null
+                                  : playback.toggle,
+                              icon: Icon(
+                                playback.opening
+                                    ? Icons.hourglass_top_rounded
+                                    : Icons.play_arrow_rounded,
+                              ),
+                              label: Text(playback.opening ? '加载中…' : '播放'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    AdaptiveVideoControls(state),
                 ],
               ),
             );

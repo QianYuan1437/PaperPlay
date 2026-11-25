@@ -62,8 +62,6 @@ class SettingsPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             SwitchListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
               title: const Text('模糊预览'),
               value: app.blurPreviews,
               onChanged: (value) {
@@ -97,14 +95,16 @@ class SettingsPage extends StatelessWidget {
             if (app.detectedRoots.isEmpty && app.manualRoots.isEmpty)
               const Text('尚未检测到目录，可添加 Steam 根目录或 431960 文件夹。'),
             ExpansionTile(
-              tilePadding: EdgeInsets.zero,
+              tilePadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 4,
+              ),
               title: Text(
                 '扫描目录（${app.detectedRoots.length + app.manualRoots.length}）',
               ),
               children: [
                 for (final root in app.detectedRoots)
                   ListTile(
-                    dense: true,
                     leading: const Icon(
                       Icons.check_circle_outline_rounded,
                       size: 20,
@@ -113,7 +113,6 @@ class SettingsPage extends StatelessWidget {
                   ),
                 for (final root in app.manualRoots)
                   ListTile(
-                    dense: true,
                     leading: const Icon(Icons.folder_outlined, size: 20),
                     title: SelectableText(root),
                     trailing: IconButton(
@@ -128,8 +127,6 @@ class SettingsPage extends StatelessWidget {
               ],
             ),
             SwitchListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
               title: const Text('启动时自动扫描'),
               value: app.autoScan,
               onChanged: (v) {
@@ -159,8 +156,6 @@ class SettingsPage extends StatelessWidget {
         child: Column(
           children: [
             SwitchListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
               title: const Text('关闭窗口时收起到托盘'),
               value: app.closeToTray,
               onChanged: (v) {
@@ -172,8 +167,6 @@ class SettingsPage extends StatelessWidget {
               listenable: app.playback,
               builder: (context, _) => SwitchListTile(
                 key: const ValueKey('settings-audio-only'),
-                dense: true,
-                contentPadding: EdgeInsets.zero,
                 title: const Text('纯音频模式'),
                 value: app.playback.audioOnly,
                 onChanged: app.playback.setAudioOnly,
@@ -222,34 +215,42 @@ class SettingsPage extends StatelessWidget {
         for (final child in children) ...[child, const SizedBox(height: 12)],
       ],
     );
-    return PageFrame(
-      title: '偏好设置',
-      subtitle: '外观、媒体来源与软件更新。',
-      children: [
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final update = _UpdateCard(app: app);
-            if (constraints.maxWidth < 700) {
-              return column([update, cards[0], cards[2], cards[1], cards[3]]);
-            }
-            Widget pair(Widget left, Widget right) => IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(child: left),
-                  const SizedBox(width: 12),
-                  Expanded(child: right),
-                ],
-              ),
-            );
-            return column([
-              pair(cards[0], update),
-              pair(cards[2], cards[1]),
-              cards[3],
-            ]);
-          },
-        ),
-      ],
+    return ListTileTheme(
+      data: ListTileTheme.of(context).copyWith(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        minVerticalPadding: 8,
+        minTileHeight: 52,
+        visualDensity: VisualDensity.standard,
+      ),
+      child: PageFrame(
+        title: '偏好设置',
+        subtitle: '外观、媒体来源与软件更新。',
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final update = _UpdateCard(app: app);
+              if (constraints.maxWidth < 700) {
+                return column([update, cards[0], cards[2], cards[1], cards[3]]);
+              }
+              Widget pair(Widget left, Widget right) => IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: left),
+                    const SizedBox(width: 12),
+                    Expanded(child: right),
+                  ],
+                ),
+              );
+              return column([
+                pair(cards[0], update),
+                pair(cards[2], cards[1]),
+                cards[3],
+              ]);
+            },
+          ),
+        ],
+      ),
     );
   }
 }
