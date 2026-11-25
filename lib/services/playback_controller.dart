@@ -16,6 +16,17 @@ class PlaybackController extends ChangeNotifier {
     );
     _subscriptions.add(player.stream.playing.listen((_) => notifyListeners()));
     _subscriptions.add(
+      player.stream.tracks.listen((_) {
+        if (audioOnly || backgroundVideoSuppressed) {
+          unawaited(
+            _serial(() async {
+              if (_loaded) await _applyVideoPolicy();
+            }),
+          );
+        }
+      }),
+    );
+    _subscriptions.add(
       player.stream.error.listen((message) {
         error = message;
         notifyListeners();
@@ -34,6 +45,7 @@ class PlaybackController extends ChangeNotifier {
   bool audioOnly = false;
   bool backgroundVideoSuppressed = false;
   bool get videoDisabled => audioOnly || backgroundVideoSuppressed;
+  bool _resumeAfterSuppression = false;
   bool _opening = false;
   bool _loaded = false;
   bool _closing = false;
@@ -84,6 +96,7 @@ class PlaybackController extends ChangeNotifier {
   Future<void> _open() async {
     _opening = true;
     _loaded = false;
+    _resumeAfterSuppression = false;
     error = null;
     notifyListeners();
     try {
@@ -91,12 +104,38 @@ class PlaybackController extends ChangeNotifier {
       for (var attempt = 0; attempt < queue.length; attempt++) {
         final item = current!;
         if (await File(item.path).exists()) {
+          // Probe with video available, while paused. Opening a silent video
+          // with vid=no makes mpv report EOF and incorrectly skip the queue.
+          await player.setVideoTrack(VideoTrack.auto());
           await player.open(Media(item.path), play: false);
-          await player.setVideoTrack(
-            videoDisabled ? VideoTrack.no() : VideoTrack.auto(),
-          );
-          await player.play();
           _loaded = true;
+          if (videoDisabled) {
+            // open() returns before mpv publishes track metadata. Wait for the
+            // first actual track list so play()/jump() finish in the correct
+            // audio-playing or silent-paused state, rather than racing the UI.
+            bool known(Tracks tracks) => [
+              ...tracks.audio,
+              ...tracks.video,
+            ].any((track) => track.id != 'auto' && track.id != 'no');
+            if (!known(player.state.tracks)) {
+              final ready = Completer<void>();
+              final subscription = player.stream.tracks.listen((tracks) {
+                if (known(tracks) && !ready.isCompleted) ready.complete();
+              });
+              try {
+                await ready.future.timeout(
+                  const Duration(seconds: 3),
+                  onTimeout: () {},
+                );
+              } finally {
+                await subscription.cancel();
+              }
+            }
+            _resumeAfterSuppression = true;
+            await _applyVideoPolicy();
+          } else {
+            await player.play();
+          }
           return;
         }
         error = '文件已移动或不可用：${item.title}';
@@ -115,6 +154,7 @@ class PlaybackController extends ChangeNotifier {
       await _open();
     } else {
       await player.playOrPause();
+      if (videoDisabled) await _applyVideoPolicy();
     }
   });
 
@@ -159,9 +199,7 @@ class PlaybackController extends ChangeNotifier {
   Future<void> setAudioOnly(bool value) => _serial(() async {
     audioOnly = value;
     if (_loaded) {
-      await player.setVideoTrack(
-        videoDisabled ? VideoTrack.no() : VideoTrack.auto(),
-      );
+      await _applyVideoPolicy();
     }
     _changed();
   });
@@ -169,11 +207,33 @@ class PlaybackController extends ChangeNotifier {
     if (backgroundVideoSuppressed == value) return;
     backgroundVideoSuppressed = value;
     if (_loaded) {
+      await _applyVideoPolicy();
+    }
+  });
+
+  Future<void> _applyVideoPolicy() async {
+    final hasAudio = player.state.tracks.audio.any(
+      (track) => track.id != 'auto' && track.id != 'no',
+    );
+    if (videoDisabled && !hasAudio) {
+      _resumeAfterSuppression |= playing;
+      await player.pause();
+      // Keep the silent file loaded and paused, with no continuous decoding.
+      // Tracks may still be loading; the tracks listener reapplies this policy.
+      return;
+    }
+    final currentlyDisabled = player.state.track.video.id == 'no';
+    if (currentlyDisabled != videoDisabled) {
       await player.setVideoTrack(
         videoDisabled ? VideoTrack.no() : VideoTrack.auto(),
       );
     }
-  });
+    if (_resumeAfterSuppression) {
+      _resumeAfterSuppression = false;
+      await player.play();
+    }
+  }
+
   void setMode(PlayMode value) {
     mode = value;
     _changed();
@@ -184,6 +244,7 @@ class PlaybackController extends ChangeNotifier {
     _changed();
   });
   Future<void> clear() => _serial(() async {
+    _resumeAfterSuppression = false;
     await player.stop();
     queue.clear();
     _history.clear();

@@ -28,4 +28,4 @@ mpv, FFmpeg and related native components carry their own GPL/LGPL/BSD and other
 
 [DavisSolomon/Stream-Deck-Wallpaper-Engine](https://github.com/DavisSolomon/Stream-Deck-Wallpaper-Engine) documents the Workshop path convention. No code or artwork was copied from that project.
 
-The test fixture `test/fixtures/sample.mp4` is generated from FFmpeg's synthetic test pattern and sine-wave generator. No Steam subscriptions, personal files, or copyrighted wallpaper artwork are included in this repository or its downloads.
+The test fixtures `test/fixtures/sample.mp4` and its audio-free derivative `silent.mp4` are generated from FFmpeg's synthetic test pattern and sine-wave generator. No Steam subscriptions, personal files, or copyrighted wallpaper artwork are included in this repository or its downloads.

@@ -10,7 +10,7 @@ class PerformanceOptions extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     children: [
       Tooltip(
-        message: '最小化或收起后只保留音频，恢复窗口时恢复视频',
+        message: '最小化或收起后只保留音频；无音轨的视频原位暂停，恢复窗口后续播',
         child: SwitchListTile(
           title: const Text('后台停止视频解码'),
           value: app.suspendVideoInBackground,
