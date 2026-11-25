@@ -3,6 +3,62 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:paperplay/services/performance_monitor.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  test('native GPU baseline resets only on a new sampling session', () async {
+    final resets = <bool>[];
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(PerformanceMonitor.channel, (
+      call,
+    ) async {
+      resets.add(call.arguments as bool);
+      return {
+        'seconds': resets.length,
+        'cpuTicks': 0,
+        'processors': 4,
+        'workingSet': 100,
+        'privateBytes': 100,
+        'ioBytes': 0,
+        'gpu': 12.5,
+      };
+    });
+    final monitor = PerformanceMonitor();
+    addTearDown(() {
+      monitor.dispose();
+      messenger.setMockMethodCallHandler(PerformanceMonitor.channel, null);
+    });
+    monitor.configure(active: true, interval: 5);
+    await Future<void>.delayed(Duration.zero);
+    await monitor.sample();
+    expect(monitor.samples.single.gpu, 12.5);
+    monitor.configure(active: false, interval: 5);
+    await monitor.sample();
+    monitor.configure(active: true, interval: 5);
+    await Future<void>.delayed(Duration.zero);
+    await monitor.sample();
+    expect(resets, [true, false, true, false]);
+  });
+  test(
+    'GPU readings preserve unavailable samples and bound valid percentages',
+    () {
+      const before = ProcessCounters(1, 0, 4, 0, 0, 0);
+      ProcessCounters counters(Object? gpu) => ProcessCounters.fromMap({
+        'seconds': 2,
+        'cpuTicks': 100,
+        'processors': 4,
+        'workingSet': 100,
+        'privateBytes': 200,
+        'ioBytes': 100,
+        'gpu': gpu,
+      });
+      expect(ResourceSample.between(before, counters(23.5)).gpu, 23.5);
+      expect(ResourceSample.between(before, counters(0)).gpu, 0);
+      expect(ResourceSample.between(before, counters(null)).gpu, isNull);
+      expect(ResourceSample.between(before, counters(double.nan)).gpu, isNull);
+      expect(ResourceSample.between(before, counters(130)).gpu, 100);
+      expect(ResourceSample.between(before, counters(-1)).gpu, 0);
+    },
+  );
   test('CPU is normalized across cores, memory and I/O use real deltas', () {
     const before = ProcessCounters(10, 0, 8, 0, 0, 0);
     const now = ProcessCounters(12, 80000000, 8, 104857600, 209715200, 4194304);

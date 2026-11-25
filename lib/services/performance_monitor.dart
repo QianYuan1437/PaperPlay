@@ -10,8 +10,9 @@ class ProcessCounters {
     this.processors,
     this.workingSet,
     this.privateBytes,
-    this.ioBytes,
-  );
+    this.ioBytes, {
+    this.gpu,
+  });
   factory ProcessCounters.fromMap(Map<dynamic, dynamic> data) =>
       ProcessCounters(
         (data['seconds'] as num).toDouble(),
@@ -20,13 +21,21 @@ class ProcessCounters {
         data['workingSet'] as int,
         data['privateBytes'] as int,
         data['ioBytes'] as int,
+        gpu: (data['gpu'] as num?)?.toDouble(),
       );
   final double seconds;
+  final double? gpu;
   final int cpuTicks, processors, workingSet, privateBytes, ioBytes;
 }
 
 class ResourceSample {
-  const ResourceSample(this.cpu, this.memoryMiB, this.privateMiB, this.ioMiB);
+  const ResourceSample(
+    this.cpu,
+    this.memoryMiB,
+    this.privateMiB,
+    this.ioMiB, {
+    this.gpu,
+  });
   factory ResourceSample.between(ProcessCounters before, ProcessCounters now) {
     final elapsed = now.seconds - before.seconds;
     return ResourceSample(
@@ -43,21 +52,23 @@ class ResourceSample {
       elapsed <= 0
           ? 0
           : math.max(0, now.ioBytes - before.ioBytes) / elapsed / 1048576,
+      gpu: now.gpu?.isFinite == true ? now.gpu!.clamp(0, 100) : null,
     );
   }
   final double cpu, memoryMiB, privateMiB, ioMiB;
+  final double? gpu;
 }
 
 /// A session-wide sampler controlled by the persisted statistics setting.
 /// Counters use monotonic native time; a paused interval never becomes a spike.
 class PerformanceMonitor extends ChangeNotifier {
-  PerformanceMonitor({Future<ProcessCounters> Function()? read})
-    : _read = read ?? readNative;
+  PerformanceMonitor({Future<ProcessCounters> Function()? read}) : _read = read;
   static const channel = MethodChannel('paperplay/metrics');
-  static Future<ProcessCounters> readNative() async => ProcessCounters.fromMap(
-    (await channel.invokeMapMethod<dynamic, dynamic>('sample'))!,
-  );
-  final Future<ProcessCounters> Function() _read;
+  static Future<ProcessCounters> readNative({bool reset = false}) async =>
+      ProcessCounters.fromMap(
+        (await channel.invokeMapMethod<dynamic, dynamic>('sample', reset))!,
+      );
+  final Future<ProcessCounters> Function()? _read;
   final List<ResourceSample> samples = [];
   Timer? _timer;
   ProcessCounters? _previous;
@@ -85,7 +96,7 @@ class PerformanceMonitor extends ChangeNotifier {
     _reading = true;
     final generation = _generation;
     try {
-      final now = await _read();
+      final now = await (_read?.call() ?? readNative(reset: _previous == null));
       if (generation != _generation) return;
       error = null;
       if (_previous != null) {

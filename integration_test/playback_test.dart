@@ -50,7 +50,7 @@ void main() {
       final app = AppState(
         LibraryStore(File(p.join(temporary.path, 'library.json'))),
         playback,
-        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.9'}),
+        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.10'}),
       );
       await app.initialize();
       app.autoScan = false;
@@ -190,6 +190,10 @@ void main() {
             lessThan(tester.getCenter(find.byType(BlurToggle).first).dx),
           );
           if (label == '性能') {
+            expect(find.text('GPU'), findsOneWidget);
+            expect(find.text('占整机总算力'), findsNothing);
+            expect(find.textContaining('私有提交'), findsNothing);
+            expect(find.text('读写速率'), findsNothing);
             expect(
               app.performance.samples,
               contains(recentSample),
@@ -203,6 +207,22 @@ void main() {
             expect(find.text('内存'), findsOneWidget);
             expect(find.text('进程 I/O'), findsOneWidget);
             expect(find.text('暂时无法读取进程统计'), findsNothing);
+            final gpuValues = app.performance.samples
+                .map((s) => s.gpu)
+                .whereType<double>()
+                .toList();
+            if (const bool.fromEnvironment('EXPECT_GPU_STATS')) {
+              expect(
+                gpuValues,
+                isNotEmpty,
+                reason: 'Physical GPU must provide process counters',
+              );
+              expect(
+                gpuValues.every((value) => value >= 0 && value <= 100),
+                isTrue,
+              );
+            }
+            debugPrint('GPU process samples: $gpuValues');
           }
           if (label == '播放队列' && size.width == 1040) {
             expect(
@@ -331,7 +351,7 @@ void main() {
       expect(app.blurPreviews, isTrue);
       await tester.tap(find.byKey(const ValueKey('sidebar-version')));
       await tester.pumpAndSettle();
-      expect(find.text('发现新版本 v1.0.9'), findsOneWidget);
+      expect(find.text('发现新版本 v1.0.10'), findsOneWidget);
       expect(find.text('查看并下载更新'), findsOneWidget);
       await tester.ensureVisible(find.text('关于 PaperPlay'));
       await tester.pumpAndSettle();

@@ -7,7 +7,7 @@ on:
       version:
         description: 'Release version (X.Y.Z); creates a new immutable version tag'
         required: true
-        default: '1.0.8'
+        default: '1.0.9'
 permissions:
   contents: write
 concurrency:
