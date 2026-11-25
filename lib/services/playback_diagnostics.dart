@@ -37,7 +37,7 @@ class PlaybackDiagnostics {
     if (_disposed) return;
     // Other failures (missing files, demuxing, output devices) remain visible.
     if (!RegExp(
-      r'codec|decoder|decoding',
+      r'codec|decoder|decoding|avhwdevicecontext|hwaccel|hwdec',
       caseSensitive: false,
     ).hasMatch(message)) {
       reset();

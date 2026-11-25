@@ -3,6 +3,27 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:paperplay/services/playback_diagnostics.dart';
 
 void main() {
+  testWidgets('failed hardware context is cleared only after decode recovery', (
+    tester,
+  ) async {
+    var seconds = 1;
+    String? error;
+    final diagnostics = PlaybackDiagnostics(
+      probe: () async => DecodeProbe(
+        position: Duration(seconds: seconds),
+        needsVideo: true,
+        audioReady: true,
+        videoPosition: seconds * 24,
+      ),
+      onError: (value) => error = value,
+    );
+    diagnostics.report('Failed to allocate AVHWDeviceContext.');
+    await tester.pump();
+    seconds++;
+    await tester.pump(const Duration(milliseconds: 650));
+    expect(error, isNull);
+    diagnostics.dispose();
+  });
   testWidgets(
     'audio progress does not hide a failed video decoder; recovery clears it',
     (tester) async {

@@ -195,7 +195,7 @@ class PlaybackController extends ChangeNotifier {
 
   Future<void> toggle() => _serial(() async {
     if (current == null) return;
-    if (!_loaded || (error != null && !playing)) {
+    if (!_loaded) {
       await _open();
     } else {
       await player.playOrPause();

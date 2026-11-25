@@ -68,6 +68,9 @@ void main() {
       reason: 'Audio progress without video output must not hide the error',
     );
     await playback.player.setVideoTrack(VideoTrack.auto());
+    // The GPU-less Windows runner emits this during software fallback.
+    // ignore: invalid_use_of_protected_member
+    native.errorController.add('Failed to allocate AVHWDeviceContext.');
     await playback.player.seek(Duration.zero);
     await playback.player.play();
     await tester.runAsync(
@@ -142,5 +145,18 @@ void main() {
       () => Future<void>.delayed(const Duration(seconds: 4)),
     );
     expect(playback.index, 1);
+    await playback.player.pause();
+    final pausedAt = playback.player.state.position;
+    // A nonfatal diagnostic must not turn resume into reopening from zero.
+    // ignore: invalid_use_of_protected_member
+    native.errorController.add('Video output initialization warning');
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await playback.toggle();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 150)),
+    );
+    expect(playback.player.state.position, greaterThanOrEqualTo(pausedAt));
   });
 }
