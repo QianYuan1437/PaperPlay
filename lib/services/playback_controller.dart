@@ -5,13 +5,22 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../models/media_entry.dart';
 import '../models/queue_order.dart';
+import 'playback_diagnostics.dart';
 
 class PlaybackController extends ChangeNotifier {
   PlaybackController() {
+    _diagnostics = PlaybackDiagnostics(
+      probe: _decodeProbe,
+      onError: (value) {
+        if (_closing || error == value) return;
+        error = value;
+        notifyListeners();
+      },
+    );
     video = VideoController(player);
     _subscriptions.add(
       player.stream.completed.listen((done) {
-        if (done && !_opening) unawaited(next(manual: false));
+        if (done && !_opening && error == null) unawaited(next(manual: false));
       }),
     );
     _subscriptions.add(player.stream.playing.listen((_) => notifyListeners()));
@@ -28,11 +37,14 @@ class PlaybackController extends ChangeNotifier {
     );
     _subscriptions.add(
       player.stream.error.listen((message) {
-        error = message;
-        notifyListeners();
+        if (current != null && !_closing) _diagnostics.report(message);
       }),
     );
+    _subscriptions.add(
+      player.stream.position.listen((_) => _diagnostics.progress()),
+    );
   }
+  late final PlaybackDiagnostics _diagnostics;
   final Player player = Player(
     configuration: const PlayerConfiguration(title: 'PaperPlay'),
   );
@@ -59,6 +71,36 @@ class PlaybackController extends ChangeNotifier {
   bool get mediaLoaded => _loaded;
   bool get opening => _opening;
 
+  Future<DecodeProbe> _decodeProbe() async {
+    final native = player.platform;
+    Future<String?> property(String name) async {
+      if (native is! NativePlayer) return null;
+      try {
+        return await native.getProperty(name);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    final needsVideo = !videoDisabled && current?.isAudio == false;
+    final hasAudio = player.state.tracks.audio.any(
+      (track) => track.id != 'auto' && track.id != 'no',
+    );
+    final videoPts = needsVideo
+        ? double.tryParse(await property('estimated-frame-number') ?? '')
+        : null;
+    final audioFormat = hasAudio ? await property('audio-params/format') : null;
+    return DecodeProbe(
+      position: player.state.position,
+      needsVideo: needsVideo,
+      videoPosition:
+          (await property('video-out-params/pixelformat'))?.isNotEmpty == true
+          ? videoPts
+          : null,
+      audioReady: !hasAudio || (audioFormat != null && audioFormat.isNotEmpty),
+    );
+  }
+
   Future<void> _serial(Future<void> Function() action) {
     if (_closing) return Future.value();
     final task = _pending.then((_) async {
@@ -66,6 +108,7 @@ class PlaybackController extends ChangeNotifier {
       try {
         await action();
       } catch (e) {
+        _diagnostics.reset();
         error = '播放失败：$e';
       }
       if (!_closing) notifyListeners();
@@ -97,13 +140,15 @@ class PlaybackController extends ChangeNotifier {
     _opening = true;
     _loaded = false;
     _resumeAfterSuppression = false;
-    error = null;
+    _diagnostics.reset();
     notifyListeners();
     try {
       // A broken/moved file cannot cause an endless repeat-one retry loop.
       for (var attempt = 0; attempt < queue.length; attempt++) {
         final item = current!;
         if (await File(item.path).exists()) {
+          // A skipped missing entry must not leave its error on the next file.
+          _diagnostics.reset();
           // Probe with video available, while paused. Opening a silent video
           // with vid=no makes mpv report EOF and incorrectly skip the queue.
           await player.setVideoTrack(VideoTrack.auto());
@@ -150,7 +195,7 @@ class PlaybackController extends ChangeNotifier {
 
   Future<void> toggle() => _serial(() async {
     if (current == null) return;
-    if (!_loaded) {
+    if (!_loaded || (error != null && !playing)) {
       await _open();
     } else {
       await player.playOrPause();
@@ -252,6 +297,7 @@ class PlaybackController extends ChangeNotifier {
     _history.clear();
     index = 0;
     _loaded = false;
+    _diagnostics.reset();
     _changed();
   });
   Future<void> remove(int value) => _serial(() async {
@@ -262,6 +308,7 @@ class PlaybackController extends ChangeNotifier {
       await player.stop();
       index = 0;
       _loaded = false;
+      _diagnostics.reset();
     } else {
       if (value < index) index--;
       index = index.clamp(0, queue.length - 1);
@@ -286,6 +333,7 @@ class PlaybackController extends ChangeNotifier {
 
   Future<void> _shutdownOnce() async {
     _closing = true;
+    _diagnostics.dispose();
     onPersist = null;
     for (final subscription in _subscriptions) {
       await subscription.cancel();

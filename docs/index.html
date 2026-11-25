@@ -1,56 +1,50 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="PaperPlay：Windows 上的 Wallpaper Engine 视频订阅管理器与本地影音播放器。无需启动壁纸引擎，也能浏览收藏、播放视频与后台听音频。">
-  <meta name="theme-color" content="#fff0b3"><title>PaperPlay · 让收藏，重新流动</title>
-  <link rel="icon" href="icon.png" type="image/png"><link rel="stylesheet" href="style.css">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="PaperPlay：Windows 上的 Wallpaper Engine 视频订阅与本地影音播放器。在线体验播放、队列、模糊预览与个性主题。">
+<meta name="theme-color" content="#f5f3eb"><title>PaperPlay · 让收藏，重新流动</title>
+<link rel="icon" href="icon.png" type="image/png"><link rel="stylesheet" href="style.css"><script src="app.js" defer></script>
 </head>
 <body>
-  <nav class="nav wrap" aria-label="主导航"><a class="brand" href="#"><img src="icon.png" alt="" width="32" height="32">PaperPlay</a>
-    <div><a href="#features">功能</a><a href="#start">开始使用</a><a href="https://github.com/QianYuan1437/PaperPlay">GitHub ↗</a><button id="theme" aria-label="切换明暗主题">◐</button></div></nav>
-  <main>
-    <section class="hero wrap">
-      <span class="eyebrow"><span class="dot"></span> 为 WINDOWS 而生 · 开源 · 本地优先</span>
-      <h1>让收藏，<br><span>重新流动。</span></h1>
-      <p class="intro">喜欢的画面，不必只留在桌面。<br>把 Wallpaper Engine 的视频收藏和本地影音，<br class="wide">收进一个安静、顺手的播放空间。</p>
-      <div class="cta"><a class="button primary" id="download" href="https://github.com/QianYuan1437/PaperPlay/releases/latest">下载 Windows 版 <span>↓</span></a><a class="button secondary" href="https://github.com/QianYuan1437/PaperPlay">查看源代码 ↗</a></div>
-      <p class="small" id="version">v1.0.9 · Windows 10 / 11 · x64 · 安装版与便携版</p>
-      <div class="preview" aria-label="PaperPlay 界面功能示意">
-        <div class="window-top"><span><img src="icon.png" width="18" height="18" alt=""> PaperPlay</span><span>◉ 模糊预览　　─　□　×</span></div>
-        <div class="window-body"><aside><div class="mini-brand">▶</div><span class="active">▦<br>概览</span><span>▧<br>订阅库</span><span>☷<br>播放队列</span><span>▷<br>播放器</span><span>▣<br>本地媒体</span></aside>
-          <div class="mock-main"><h2>让收藏，重新流动。</h2><p class="small">订阅与本地影音，一处浏览，自在播放。</p>
-            <div class="mock-grid">
-              <div class="mock-card"><div class="card-label">▧ Wallpaper Engine 订阅 <span>浏览全部 →</span></div><p class="card-note">无需开启壁纸引擎，随时重逢喜欢的画面。</p><div class="scenes"><div class="scene sea"></div><div class="scene sunset"></div><div class="scene hill"></div></div></div>
-              <div class="mock-card"><div class="card-label">☷ 播放队列 <span>管理队列 →</span></div><div class="audio-tile"><span>♫</span><div><strong>今天，想听点什么？</strong><p>顺序 / 随机 / 单曲循环</p></div></div><div class="pills"><span>纯音频播放</span><span>托盘常驻</span></div></div>
-              <div class="mock-card"><div class="card-label">▷ 视频播放 <span>打开播放器 →</span></div><div class="cinema"><span>▶</span><div>给喜欢的画面，按下播放</div></div></div>
-              <div class="mock-card"><div class="card-label">▣ 本地媒体 <span>查看媒体 →</span></div><p class="card-note">电影、音乐、生活的片段。<br>让你的文件夹，成为随身的放映室。</p><div class="pills"><span class="accent">＋ 导入文件</span><span>选择文件夹</span></div></div>
-            </div>
-          </div>
-        </div><div class="mock-controls"><span>♫　你的私人影音库</span><span>◀　❚❚　▶</span><span>列表循环　　◖))) ━━━</span></div>
-      </div><p class="preview-caption">v1.0.9 · GPU 占用曲线 · 精简性能卡片</p>
-    </section>
-    <section class="features wrap" id="features"><div class="section-title"><span class="eyebrow">LESS FRICTION, MORE PLAY</span><h2>从发现，到播放。<br>每一步都刚刚好。</h2></div>
-      <div class="features-grid">
-        <article><span class="feature-icon">▧</span><h3>收藏，不再藏在文件夹里</h3><p>自动发现 Steam 的多个媒体库，读取视频订阅、封面与标签。搜索、收藏、批量选择，不需要先运行 Wallpaper Engine。</p></article>
-        <article><span class="feature-icon">♫</span><h3>画面之外，声音也自由</h3><p>视频一键切换纯音频，关闭视频轨道。顺序、随机、单曲与列表循环，让喜欢的声音陪你工作。</p></article>
-        <article><span class="feature-icon">▷</span><h3>一个顺手的本地播放器</h3><p>基于 media_kit 与 libmpv 播放内核，支持进度拖动、音量、全屏与播放队列。拖动排序，保存自己的播放列表。</p></article>
-        <article><span class="feature-icon">▣</span><h3>你的文件，也在这里</h3><p>导入视频、音乐或整个文件夹，和壁纸收藏享受同样的播放体验。收起到托盘后继续播放，随时切歌。</p></article>
-        <article><span class="feature-icon">◴</span><h3>看得见的资源消耗</h3><p>CPU、内存与进程读写实时曲线。后台停止视频解码，只保留音频；预览缓存和采样间隔均可调。</p></article>
-        <article><span class="feature-icon">◈</span><h3>轻透的窗口材质</h3><p>透明、亚克力与云母，自定义背景不透明度和动效。所有选项与设置同步，不支持的系统自动回退纯色。</p></article>
+<a class="skip-link" href="#workspace">跳到体验区</a><div class="ambient" aria-hidden="true"><i></i><i></i></div>
+<aside class="sidebar">
+  <a class="brand" href="#overview"><img src="icon.png" width="38" height="38" alt="">PaperPlay<span class="brand-dot"></span></a>
+  <nav id="navigation" aria-label="体验导航">
+    <a href="#overview" data-route="overview"><i data-icon="grid"></i><span>概览</span></a>
+    <a href="#library" data-route="library"><i data-icon="library"></i><span>订阅库</span></a>
+    <a href="#queue" data-route="queue"><i data-icon="list"></i><span>播放队列</span><b id="queue-count">3</b></a>
+    <a href="#player" data-route="player"><i data-icon="play"></i><span>播放器</span></a>
+    <a href="#local" data-route="local"><i data-icon="folder"></i><span>本地媒体</span></a>
+    <a href="#performance" data-route="performance"><i data-icon="pulse"></i><span>性能</span></a>
+    <a href="#appearance" data-route="appearance"><i data-icon="sliders"></i><span>外观</span></a>
+  </nav>
+  <div class="sidebar-bottom"><a class="source-link" href="https://github.com/QianYuan1437/PaperPlay" target="_blank" rel="noopener"><i data-icon="code"></i>源代码<i data-icon="arrow"></i></a><a id="version" class="version" href="https://github.com/QianYuan1437/PaperPlay/releases/latest" target="_blank" rel="noopener">v1.0.10<i data-icon="arrow"></i></a></div>
+</aside>
+<div class="page">
+  <header class="topbar"><div class="breadcrumb">PaperPlay <span>/</span> <strong id="page-name">概览</strong></div><div class="global-tools">
+    <button class="pill" id="audio-toggle" aria-pressed="false"><i data-icon="headphones"></i><span>纯音频</span></button>
+    <button class="pill" id="blur-toggle" aria-pressed="false"><i data-icon="blur"></i><span>模糊预览</span></button>
+    <button class="icon-button" id="theme-toggle" aria-label="切换深浅主题"><i data-icon="moon"></i></button>
+  </div></header>
+  <main id="workspace" tabindex="-1">
+    <section class="intro-panel">
+      <div class="intro-copy"><div class="edition"><span></span> WINDOWS · OPEN SOURCE</div><h1>让收藏，<br>重新<span>流动。</span></h1><p class="lead">喜欢的画面，<br>也可以是随行的声音。</p>
+        <div class="download-actions"><a class="button primary" id="download" href="https://github.com/QianYuan1437/PaperPlay/releases/latest" target="_blank" rel="noopener"><i data-icon="windows"></i>下载 Windows 版<i data-icon="download"></i></a><a class="button quiet" id="portable" href="https://github.com/QianYuan1437/PaperPlay/releases/latest" target="_blank" rel="noopener">便携版 ZIP<i data-icon="arrow"></i></a></div>
+        <div class="color-dots" aria-label="主题色"><button data-accent="gold" aria-label="暖金主题" aria-pressed="true"></button><button data-accent="sage" aria-label="苔绿主题" aria-pressed="false"></button><button data-accent="blue" aria-label="雾蓝主题" aria-pressed="false"></button><button data-accent="rose" aria-label="柔粉主题" aria-pressed="false"></button></div>
       </div>
+      <a class="feature-note" href="#local"><div class="note-icon"><i data-icon="folder"></i></div><span>你的媒体。<br><strong>始终留在本机。</strong></span><i data-icon="arrow"></i></a>
     </section>
-    <section class="start wrap" id="start"><div><span class="eyebrow">READY WHEN YOU ARE</span><h2>三步，开始你的放映。</h2><p>所有媒体留在本机。无需登录，无需上传。</p><a class="button primary" href="https://github.com/QianYuan1437/PaperPlay/releases">查看全部版本 ↗</a></div>
-      <ol><li><span>01</span><div><h3>下载并打开</h3><p>选择安装程序，或将便携 ZIP 完整解压后运行 paperplay.exe。</p></div></li><li><span>02</span><div><h3>发现你的收藏</h3><p>自动扫描 Steam 视频订阅；找不到时，在设置中添加 Steam 库或 431960 文件夹。</p></div></li><li><span>03</span><div><h3>播放，或者只听声音</h3><p>选择媒体并加入队列，保存列表，然后把窗口收起到托盘。</p></div></li></ol>
-    </section>
-    <section class="faq wrap"><h2>一些你可能想知道的事</h2>
-      <details><summary>需要运行 Wallpaper Engine 吗？</summary><p>不需要。PaperPlay 直接读取本机已经下载的视频订阅。下载或更新订阅仍由 Steam / Wallpaper Engine 完成。</p></details>
-      <details><summary>所有类型的壁纸都能播放吗？</summary><p>扫描仅支持 project.json 中标记为 video 的项目。场景（scene）、网页（web）与应用（application）壁纸不作为视频播放。</p></details>
-      <details><summary>移出媒体库会删除原文件吗？</summary><p>不会。PaperPlay 只移除自己的记录，不删除媒体文件，也不取消 Steam 订阅。重新扫描时订阅项目会重新出现。</p></details>
-      <details><summary>如何隐藏列表中的预览画面？</summary><p>在设置、订阅库或本地媒体页开启「模糊预览」。这些开关即时同步，封面会产生模糊效果，重启后也会记住选择。</p></details>
-      <details><summary>为什么便携版不能只复制 EXE？</summary><p>Flutter 与播放内核需要同目录的 DLL、data 与其他资源。请保留完整解压目录。每个 Release 均提供 SHA-256 校验文件与构建信息。</p></details>
-    </section>
+    <section class="experience" aria-label="PaperPlay 在线交互演示"><div class="experience-heading"><span class="live-badge"><i></i>交互演示</span><span id="view-label">随心选择，即刻播放</span><button class="icon-button" id="reset-demo" aria-label="重置演示"><i data-icon="reset"></i></button></div><div id="view" tabindex="-1"></div></section>
   </main>
-  <footer class="wrap"><a class="brand" href="#"><img src="icon.png" width="26" height="26" alt="">PaperPlay</a><p>用熟悉的方式，享受你的收藏。<br><small>界面沿用 <a href="https://github.com/QianYuan1437/OpenSpeak">OpenSpeak</a> 的设计语言。与 Valve / Wallpaper Engine 无隶属关系。</small></p><a href="https://github.com/QianYuan1437/PaperPlay/blob/main/THIRD_PARTY_NOTICES.md">开源致谢 ↗</a></footer>
-  <script src="app.js"></script>
+  <footer><span>Wallpaper Engine 视频订阅 · 本地影音</span><a href="https://github.com/QianYuan1437/PaperPlay/blob/main/THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener">开源致谢<i data-icon="arrow"></i></a></footer>
+</div>
+<section class="transport" aria-label="播放控制">
+  <button class="now-playing" id="now-playing" aria-label="打开播放器"><img id="now-art" src="media/tide.svg" alt=""><span><strong id="now-title">暮色潮汐</strong><span id="now-kind">原创演示片段</span></span><i data-icon="expand"></i></button>
+  <div class="transport-center"><div class="transport-buttons"><button class="icon-button" id="previous" aria-label="上一首"><i data-icon="previous"></i></button><button class="play-button" id="play" aria-label="播放"><i data-icon="play"></i></button><button class="icon-button" id="next" aria-label="下一首"><i data-icon="next"></i></button></div><div class="seek-row"><output id="elapsed">0:00</output><input id="seek" type="range" min="0" max="1000" value="0" aria-label="播放进度"><output id="duration">0:12</output></div></div>
+  <div class="transport-right"><button class="pill" id="mode" aria-label="播放模式：列表循环"><i data-icon="repeat"></i><span>列表循环</span></button><button class="icon-button" id="mute" aria-label="静音"><i data-icon="volume"></i></button><input id="volume" type="range" min="0" max="100" value="35" aria-label="音量"></div>
+</section>
+<div id="media-home" hidden><video id="media" playsinline preload="metadata" poster="media/tide.svg" src="media/tide.mp4"></video></div>
+<input id="file-input" type="file" accept="video/*,audio/*" multiple hidden><div id="toast" role="status" aria-live="polite"></div>
+<noscript><div class="no-script">启用 JavaScript 可体验播放器；下载链接仍可直接使用。</div></noscript>
 </body></html>

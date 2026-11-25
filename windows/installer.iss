@@ -1,5 +1,5 @@
 #ifndef AppVersion
-  #define AppVersion "1.0.9"
+  #define AppVersion "1.0.10"
 #endif
 #define AppUserModelId "QianYuan1437.PaperPlay"
 #ifndef SourceDir

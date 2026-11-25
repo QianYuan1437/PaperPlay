@@ -7,7 +7,7 @@ on:
       version:
         description: 'Release version (X.Y.Z); creates a new immutable version tag'
         required: true
-        default: '1.0.9'
+        default: '1.0.10'
 permissions:
   contents: write
 concurrency:
@@ -61,6 +61,8 @@ jobs:
         run: flutter test integration_test/restore_playback_test.dart -d windows --dart-define="TEST_MEDIA=${{ github.workspace }}/test/fixtures/sample.mp4"
       - name: Audio to video surface regression
         run: flutter test integration_test/audio_switch_test.dart -d windows --dart-define="TEST_MEDIA=${{ github.workspace }}/test/fixtures/sample.mp4"
+      - name: Codec diagnostic and failed-media regression
+        run: flutter test integration_test/codec_diagnostic_test.dart -d windows
       - name: Verify audio playback flicker fix
         run: flutter test integration_test/interaction_test.dart -d windows --dart-define=HEADLESS_AUDIO=true --dart-define="TEST_MEDIA=${{ github.workspace }}/test/fixtures/sample.mp4"
       - name: Verify silent wallpaper background behavior

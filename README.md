@@ -19,6 +19,12 @@ Windows 上的 **Wallpaper Engine 视频订阅管理器与本地影音播放器*
 - **检查更新**：设置中手动检查 GitHub 最新正式 Release；点击侧栏版本号可直接跳转并检查，发现更新后打开发布页下载；匿名 API 限流时自动使用官方 Release 页面作为备用检查路径。
 - **统一图标**：浅黄色背景、透明外缘、双齿轮轮廓与放大播放符号。应用内、任务栏与托盘图标按播放引擎状态显示三角 / 暂停；桌面快捷方式使用静态品牌图标。
 
+## v1.0.10
+
+修复媒体正常播放时播放条残留 `Could not open codec` 的误报：解码诊断先验证播放进度与视频输出，恢复后清除；真正的无视频输出、无音频解码或文件损坏仍显示错误。清空队列、切换文件取消旧诊断；跳过丢失文件后不会污染下一条正常视频，失败媒体不再因自动循环反复重开。
+
+官网改为分栏交互体验，提供自带视频播放、纯音频视图、收藏搜索、队列管理、本地文件导入、主题/模糊/动效设置。浏览器性能页显示真实浏览器帧率与帧间隔，不冒充桌面 CPU/GPU 数据。支持窄屏、键盘与减少动效，Pages 部署前自动运行浏览器回归与无障碍检查。
+
 ## v1.0.9
 
 新增进程 GPU 占用曲线，与 CPU、内存、I/O 共用统计开关和采样历史；原生计数器在后台线程读取，不阻塞界面或窗口退出。统计卡片删除小字说明，只保留名称、当前值和曲线，窄窗口自动排为两列。
@@ -83,7 +89,7 @@ flutter test
 flutter test integration_test/playback_test.dart -d windows --dart-define="TEST_MEDIA=$((Get-Location).Path)/test/fixtures/sample.mp4"
 flutter test integration_test/interaction_test.dart -d windows --dart-define="TEST_MEDIA=$((Get-Location).Path)/test/fixtures/sample.mp4"
 flutter build windows --release
-./tool/package.ps1 -Version 1.0.9
+./tool/package.ps1 -Version 1.0.10
 ```
 
 只保留 `windows/` 平台；Pages 是独立静态介绍站，不是 Flutter Web。测试视频由 FFmpeg 的 `testsrc2` 与 `sine` 合成，不包含用户订阅内容。

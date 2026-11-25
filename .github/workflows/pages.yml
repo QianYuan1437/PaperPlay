@@ -2,7 +2,7 @@ name: GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ['docs/**', '.github/workflows/pages.yml']
+    paths: ['docs/**', 'tool/test_pages.cjs', 'tool/pages-tests/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -16,6 +16,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tool/pages-tests/package-lock.json
+      - name: Install browser test dependencies
+        run: npm ci --prefix tool/pages-tests
+      - name: Install Chrome
+        run: npx --prefix tool/pages-tests playwright install --with-deps chrome
+      - name: Verify interactive Pages
+        env:
+          PAPERPLAY_BROWSER_CHANNEL: chrome
+        run: node tool/test_pages.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pages-browser-check
+          path: artifacts/pages-ui/
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
