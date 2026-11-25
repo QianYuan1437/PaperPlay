@@ -6,15 +6,24 @@ import 'models/queue_order.dart';
 import 'services/library_store.dart';
 import 'services/update_service.dart';
 import 'services/playback_controller.dart';
+import 'services/performance_monitor.dart';
 import 'services/steam_scanner.dart';
 import 'ui/theme.dart';
 
 class AppState extends ChangeNotifier {
-  AppState(this.store, this.playback, {UpdateService? updates})
-    : updates = updates ?? UpdateService() {
+  AppState(
+    this.store,
+    this.playback, {
+    UpdateService? updates,
+    PerformanceMonitor? performance,
+  }) : updates = updates ?? UpdateService(),
+       performance = performance ?? PerformanceMonitor() {
     playback.onPersist = persist;
   }
   final UpdateService updates;
+  final PerformanceMonitor performance;
+  bool performanceEnabled = true;
+  bool _initialized = false;
   final LibraryStore store;
   final PlaybackController playback;
   final SteamScanner scanner = SteamScanner();
@@ -70,6 +79,7 @@ class AppState extends ChangeNotifier {
           data['suspendVideoInBackground'] as bool? ?? true;
       releasePreviewCache = data['releasePreviewCache'] as bool? ?? true;
       reduceMotion = data['reduceMotion'] as bool? ?? false;
+      performanceEnabled = data['performanceEnabled'] as bool? ?? true;
       final cache = data['previewCacheMiB'];
       previewCacheMiB = [32, 64, 128].contains(cache) ? cache as int : 64;
       final interval = data['sampleSeconds'];
@@ -98,6 +108,8 @@ class AppState extends ChangeNotifier {
     } catch (e) {
       message = '部分设置无法恢复：$e';
     }
+    _initialized = true;
+    _configurePerformance();
     notifyListeners();
   }
 
@@ -122,6 +134,7 @@ class AppState extends ChangeNotifier {
     'reduceMotion': reduceMotion,
     'previewCacheMiB': previewCacheMiB,
     'sampleSeconds': sampleSeconds,
+    'performanceEnabled': performanceEnabled,
     'windowEffect': windowEffect,
     'surfaceOpacity': surfaceOpacity,
     'lastScan': lastScan?.toIso8601String(),
@@ -145,8 +158,23 @@ class AppState extends ChangeNotifier {
   }
 
   void changed() {
+    _configurePerformance();
     notifyListeners();
     persist();
+  }
+
+  void _configurePerformance() {
+    if (_initialized) {
+      performance.configure(
+        active: performanceEnabled,
+        interval: sampleSeconds,
+      );
+    }
+  }
+
+  void stopPerformance() {
+    _initialized = false;
+    performance.configure(active: false, interval: sampleSeconds);
   }
 
   void appearanceApplied({required bool translucent, String? message}) {
@@ -165,6 +193,7 @@ class AppState extends ChangeNotifier {
 
   @override
   void dispose() {
+    performance.dispose();
     windowVisible.dispose();
     super.dispose();
   }

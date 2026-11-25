@@ -48,7 +48,7 @@ class ResourceSample {
   final double cpu, memoryMiB, privateMiB, ioMiB;
 }
 
-/// Samples only while the page is mounted and the desktop window is visible.
+/// A session-wide sampler controlled by the persisted statistics setting.
 /// Counters use monotonic native time; a paused interval never becomes a spike.
 class PerformanceMonitor extends ChangeNotifier {
   PerformanceMonitor({Future<ProcessCounters> Function()? read})

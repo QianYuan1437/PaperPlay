@@ -6,6 +6,7 @@ import '../app_state.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'window_layout.dart';
 import 'window_appearance.dart';
+import 'performance_monitor.dart';
 
 class DesktopService with WindowListener, TrayListener, WidgetsBindingObserver {
   DesktopService(this.app);
@@ -19,6 +20,25 @@ class DesktopService with WindowListener, TrayListener, WidgetsBindingObserver {
   Future<void> _indicatorUpdates = Future.value();
   final _appearance = WindowAppearance();
   bool? _backgroundVideoRequested;
+  bool? _keepDisplayAwake;
+  void _syncDisplaySleep() {
+    final enabled =
+        !_disposed &&
+        !_quitting &&
+        app.windowVisible.value &&
+        app.playback.playing &&
+        !app.playback.videoDisabled &&
+        app.playback.current != null &&
+        !app.playback.current!.isAudio;
+    if (_keepDisplayAwake == enabled) return;
+    _keepDisplayAwake = enabled;
+    unawaited(
+      PerformanceMonitor.channel
+          .invokeMethod<void>('keepDisplayAwake', enabled)
+          .catchError((Object _) {}),
+    );
+  }
+
   Future<void> initialize() async {
     windowManager.addListener(this);
     WidgetsBinding.instance.addObserver(this);
@@ -47,6 +67,7 @@ class DesktopService with WindowListener, TrayListener, WidgetsBindingObserver {
       unawaited(app.playback.setBackgroundVideoSuppressed(suspend));
     }
     unawaited(syncAppearance());
+    _syncDisplaySleep();
   }
 
   Future<void> syncAppearance() => _appearance.apply(app);
@@ -68,6 +89,7 @@ class DesktopService with WindowListener, TrayListener, WidgetsBindingObserver {
   void onWindowRestore() => _setVisible(true);
 
   void _onPlaybackChanged() {
+    _syncDisplaySleep();
     unawaited(syncPlaybackIndicator());
   }
 
@@ -113,6 +135,8 @@ class DesktopService with WindowListener, TrayListener, WidgetsBindingObserver {
 
   Future<void> dispose() async {
     _disposed = true;
+    _syncDisplaySleep();
+    app.stopPerformance();
     _appearance.disposed = true;
     app.removeListener(_onSettingsChanged);
     WidgetsBinding.instance.removeObserver(this);

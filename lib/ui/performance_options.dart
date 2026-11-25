@@ -9,16 +9,22 @@ class PerformanceOptions extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      Tooltip(
-        message: '最小化或收起后只保留音频；无音轨的视频原位暂停，恢复窗口后续播',
-        child: SwitchListTile(
-          title: const Text('后台停止视频解码'),
-          value: app.suspendVideoInBackground,
-          onChanged: (value) {
-            app.suspendVideoInBackground = value;
-            app.changed();
-          },
-        ),
+      SwitchListTile(
+        key: const ValueKey('performance-enabled'),
+        title: const Text('性能统计'),
+        value: app.performanceEnabled,
+        onChanged: (value) {
+          app.performanceEnabled = value;
+          app.changed();
+        },
+      ),
+      SwitchListTile(
+        title: const Text('后台停止视频解码'),
+        value: app.suspendVideoInBackground,
+        onChanged: (value) {
+          app.suspendVideoInBackground = value;
+          app.changed();
+        },
       ),
       SwitchListTile(
         title: const Text('后台释放闲置预览缓存'),

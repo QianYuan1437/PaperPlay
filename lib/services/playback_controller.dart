@@ -197,7 +197,9 @@ class PlaybackController extends ChangeNotifier {
     _changed();
   });
   Future<void> setAudioOnly(bool value) => _serial(() async {
+    if (audioOnly == value) return;
     audioOnly = value;
+    notifyListeners();
     if (_loaded) {
       await _applyVideoPolicy();
     }

@@ -50,7 +50,7 @@ void main() {
       final app = AppState(
         LibraryStore(File(p.join(temporary.path, 'library.json'))),
         playback,
-        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.8'}),
+        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.9'}),
       );
       await app.initialize();
       app.autoScan = false;
@@ -164,6 +164,12 @@ void main() {
       await desktop.syncPlaybackIndicator();
       expect(desktop.displayedPlaying, isFalse);
       await playback.setAudioOnly(false);
+      expect(
+        app.performance.samples,
+        isNotEmpty,
+        reason: 'Statistics must start before the Performance page is opened',
+      );
+      final firstSample = app.performance.samples.first;
       for (final size in [
         const Size(1040, 700),
         const Size(900, 650),
@@ -177,6 +183,12 @@ void main() {
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull, reason: '$label at $size');
           expect(find.byType(BlurToggle), findsWidgets);
+          final globalAudio = find.byKey(const ValueKey('global-audio-toggle'));
+          expect(globalAudio, findsOneWidget);
+          expect(
+            tester.getCenter(globalAudio).dx,
+            lessThan(tester.getCenter(find.byType(BlurToggle).first).dx),
+          );
           if (label == '性能') {
             await tester.runAsync(
               () => Future<void>.delayed(const Duration(milliseconds: 6200)),
@@ -195,21 +207,14 @@ void main() {
           }
           if (label == '播放器') {
             final toolbar = find.byKey(const ValueKey('player-toolbar'));
-            final audio = find.descendant(
-              of: toolbar,
-              matching: find.text('纯音频'),
-            );
-            final tray = find.descendant(
-              of: toolbar,
-              matching: find.text('收起到托盘'),
-            );
             expect(
-              tester.getCenter(audio).dy,
-              closeTo(tester.getCenter(tray).dy, 2),
+              find.descendant(of: toolbar, matching: find.text('纯音频')),
+              findsNothing,
             );
+            final title = find.byKey(const ValueKey('playback-title-link'));
             expect(
-              tester.getCenter(audio).dx,
-              lessThan(tester.getCenter(tray).dx),
+              tester.getCenter(title).dy,
+              closeTo(tester.getCenter(find.byTooltip('播放').first).dy, 2),
             );
           }
           if (label == '概览') {
@@ -321,7 +326,7 @@ void main() {
       expect(app.blurPreviews, isTrue);
       await tester.tap(find.byKey(const ValueKey('sidebar-version')));
       await tester.pumpAndSettle();
-      expect(find.text('发现新版本 v1.0.8'), findsOneWidget);
+      expect(find.text('发现新版本 v1.0.9'), findsOneWidget);
       expect(find.text('查看并下载更新'), findsOneWidget);
       await tester.ensureVisible(find.text('关于 PaperPlay'));
       await tester.pumpAndSettle();
@@ -336,6 +341,26 @@ void main() {
       await tester.ensureVisible(find.text('性能').first);
       await tester.tap(find.text('性能').first);
       await tester.pumpAndSettle();
+      expect(
+        app.performance.samples,
+        contains(firstSample),
+        reason: 'Navigating between pages must not reset history',
+      );
+      for (final link in ['playback-artwork-link', 'playback-title-link']) {
+        await tester.tap(find.byKey(ValueKey(link)));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('player-toolbar')), findsOneWidget);
+        await tester.ensureVisible(find.text('性能').first);
+        await tester.tap(find.text('性能').first);
+        await tester.pumpAndSettle();
+      }
+      final statistics = find.byKey(const ValueKey('performance-enabled'));
+      await tester.ensureVisible(statistics);
+      await tester.pumpAndSettle();
+      await tester.tap(statistics);
+      await tester.pumpAndSettle();
+      expect(app.performanceEnabled, isFalse);
+      expect(app.performance.samples, isEmpty);
       final backgroundSwitch = find.widgetWithText(SwitchListTile, '后台停止视频解码');
       await tester.ensureVisible(backgroundSwitch);
       await tester.pumpAndSettle();
@@ -345,6 +370,14 @@ void main() {
       await tester.ensureVisible(find.text('设置').first);
       await tester.tap(find.text('设置').first);
       await tester.pumpAndSettle();
+      await tester.ensureVisible(backgroundSwitch);
+      await tester.pumpAndSettle();
+      expect(tester.widget<SwitchListTile>(statistics).value, isFalse);
+      await tester.ensureVisible(statistics);
+      await tester.pumpAndSettle();
+      await tester.tap(statistics);
+      await tester.pumpAndSettle();
+      expect(app.performanceEnabled, isTrue);
       await tester.ensureVisible(backgroundSwitch);
       await tester.pumpAndSettle();
       expect(tester.widget<SwitchListTile>(backgroundSwitch).value, isFalse);
@@ -391,6 +424,7 @@ void main() {
       expect((await app.store.load())['blurPreviews'], isTrue);
       final saved = await app.store.load();
       expect(saved['sampleSeconds'], 5);
+      expect(saved['performanceEnabled'], isTrue);
       expect(saved['previewCacheMiB'], 32);
       expect(saved['reduceMotion'], isTrue);
       expect(saved['suspendVideoInBackground'], isTrue);

@@ -59,13 +59,6 @@ class _AppShellState extends State<AppShell> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    FilterChip(
-                      label: const Text('纯音频'),
-                      selected: app.playback.audioOnly,
-                      avatar: const Icon(Icons.headphones_rounded, size: 18),
-                      onSelected: app.playback.setAudioOnly,
-                    ),
-                    const SizedBox(width: 10),
                     OutlinedButton.icon(
                       onPressed: widget.desktop.hide,
                       icon: const Icon(
@@ -114,6 +107,35 @@ class _AppShellState extends State<AppShell> {
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4, right: 8),
+                    child: ListenableBuilder(
+                      listenable: app.playback,
+                      builder: (context, _) => RepaintBoundary(
+                        child: FilterChip(
+                          key: const ValueKey('global-audio-toggle'),
+                          showCheckmark: false,
+                          visualDensity: VisualDensity.compact,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          labelPadding: const EdgeInsets.symmetric(
+                            horizontal: 3,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          label: const Text('纯音频'),
+                          selected: app.playback.audioOnly,
+                          avatar: const Icon(
+                            Icons.headphones_rounded,
+                            size: 16,
+                          ),
+                          onSelected: app.playback.setAudioOnly,
                         ),
                       ),
                     ),

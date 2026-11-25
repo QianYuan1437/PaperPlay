@@ -35,6 +35,16 @@ bool FlutterWindow::OnCreate() {
       flutter_controller_->engine()->messenger(), "paperplay/metrics",
       &flutter::StandardMethodCodec::GetInstance());
   metrics_channel_->SetMethodCallHandler([this](const auto& call, auto result) {
+    if (call.method_name() == "keepDisplayAwake") {
+      const auto* enabled = call.arguments() ? std::get_if<bool>(call.arguments()) : nullptr;
+      if (!enabled) {
+        result->Error("invalid_argument", "Expected a boolean");
+        return;
+      }
+      SetThreadExecutionState(ES_CONTINUOUS | (*enabled ? (ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED) : 0));
+      result->Success();
+      return;
+    }
     if (call.method_name() == "resetBackdrop") {
       // flutter_acrylic 1.1.4 does not clear the modern Windows 11 backdrop
       // when returning to solid/transparent. Reset it before applying the next

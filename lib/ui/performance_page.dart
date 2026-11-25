@@ -1,39 +1,12 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../app_state.dart';
-import '../services/performance_monitor.dart';
 import 'performance_options.dart';
 import 'widgets.dart';
 
-class PerformancePage extends StatefulWidget {
+class PerformancePage extends StatelessWidget {
   const PerformancePage({super.key, required this.app});
   final AppState app;
-  @override
-  State<PerformancePage> createState() => _PerformancePageState();
-}
-
-class _PerformancePageState extends State<PerformancePage> {
-  final monitor = PerformanceMonitor();
-  @override
-  void initState() {
-    super.initState();
-    widget.app.addListener(_configure);
-    widget.app.windowVisible.addListener(_configure);
-    _configure();
-  }
-
-  void _configure() => monitor.configure(
-    active: widget.app.windowVisible.value,
-    interval: widget.app.sampleSeconds,
-  );
-  @override
-  void dispose() {
-    widget.app.removeListener(_configure);
-    widget.app.windowVisible.removeListener(_configure);
-    monitor.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) => ListTileTheme(
     data: ListTileTheme.of(context).copyWith(
@@ -47,13 +20,13 @@ class _PerformancePageState extends State<PerformancePage> {
       subtitle: '',
       children: [
         ListenableBuilder(
-          listenable: monitor,
+          listenable: app.performance,
           builder: (context, _) => Column(
             children: [
               LayoutBuilder(
                 builder: (context, constraints) {
                   final width = (constraints.maxWidth - 24) / 3;
-                  final samples = monitor.samples;
+                  final samples = app.performance.samples;
                   final latest = samples.lastOrNull;
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,17 +70,13 @@ class _PerformancePageState extends State<PerformancePage> {
                   );
                 },
               ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  monitor.error ??
-                      (monitor.samples.isEmpty
-                          ? '正在采样…'
-                          : '每 ${widget.app.sampleSeconds} 秒采样 · 最近 ${monitor.samples.length} 个点 · 仅统计 PaperPlay 进程'),
-                  style: Theme.of(context).textTheme.bodySmall,
+              if (!app.performanceEnabled || app.performance.error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    app.performanceEnabled ? app.performance.error! : '性能统计已关闭',
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -116,12 +85,12 @@ class _PerformancePageState extends State<PerformancePage> {
             final performance = SectionCard(
               title: '性能配置',
               icon: Icons.tune_rounded,
-              child: PerformanceOptions(app: widget.app),
+              child: PerformanceOptions(app: app),
             );
             final appearance = SectionCard(
               title: '外观与动效',
               icon: Icons.blur_on_rounded,
-              child: AppearanceOptions(app: widget.app),
+              child: AppearanceOptions(app: app),
             );
             if (constraints.maxWidth < 760) {
               return Column(

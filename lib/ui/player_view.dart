@@ -1,11 +1,13 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:media_kit/media_kit.dart' show VideoParams;
 import 'package:media_kit_video/media_kit_video.dart';
 import '../app_state.dart';
 import '../models/queue_order.dart';
 import '../services/playback_controller.dart';
 import 'widgets.dart';
 import 'playback_timeline.dart';
+import 'marquee_title.dart';
 
 const modeLabels = {
   PlayMode.sequential: '顺序播放',
@@ -27,115 +29,165 @@ class PlayerView extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: playback,
-    builder: (context, _) {
-      final item = playback.current;
-      final blur = PreviewPrivacy.of(context);
-      final content = item == null
-          ? Container(
-              color: Theme.of(context).colorScheme.surfaceContainerLow,
-              child: Center(
-                child: EmptyState(
-                  icon: Icons.play_circle_outline_rounded,
-                  title: '',
-                  description: '',
-                  compact: compact,
-                ),
-              ),
-            )
-          : playback.audioOnly || item.isAudio
-          ? Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primaryContainer,
-                    Theme.of(context).colorScheme.surfaceContainerLow,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Center(
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.headphones_rounded,
-                        size: compact ? 44 : 76,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(height: 16),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Text(
-                          item.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 17,
-                          ),
-                        ),
-                      ),
-                    ],
+    builder: (context, _) => StreamBuilder<VideoParams>(
+      stream: playback.player.stream.videoParams,
+      initialData: playback.player.state.videoParams,
+      builder: (context, parameters) {
+        final item = playback.current;
+        final blur = PreviewPrivacy.of(context);
+        final showAudio =
+            playback.audioOnly ||
+            (item?.isAudio ?? false) ||
+            (playback.mediaLoaded &&
+                ((parameters.data?.w ?? 0) == 0 ||
+                    (parameters.data?.h ?? 0) == 0));
+        final content = item == null
+            ? Container(
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                child: Center(
+                  child: EmptyState(
+                    icon: Icons.play_circle_outline_rounded,
+                    title: '',
+                    description: '',
+                    compact: compact,
                   ),
                 ),
-              ),
-            )
-          : Video(
-              controller: playback.video,
-              pauseUponEnteringBackgroundMode: false,
-              resumeUponEnteringForegroundMode: false,
-              controls: (state) => Stack(
+              )
+            : Stack(
                 fit: StackFit.expand,
                 children: [
-                  if (blur)
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: ClipRect(
-                          child: BackdropFilter(
-                            filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                            child: const ColoredBox(color: Color(0x18000000)),
+                  if (!item.isAudio)
+                    Visibility(
+                      visible: !playback.audioOnly,
+                      maintainState: true,
+                      child: Video(
+                        controller: playback.video,
+                        wakelock: false,
+                        pauseUponEnteringBackgroundMode: false,
+                        resumeUponEnteringForegroundMode: false,
+                        controls: (state) => Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            if (blur)
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: ClipRect(
+                                    child: BackdropFilter(
+                                      filter: ui.ImageFilter.blur(
+                                        sigmaX: 18,
+                                        sigmaY: 18,
+                                      ),
+                                      child: const ColoredBox(
+                                        color: Color(0x18000000),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            if (!playback.mediaLoaded)
+                              Positioned.fill(
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    MediaArt(entry: item, radius: 0),
+                                    Center(
+                                      child: FilledButton.icon(
+                                        key: const ValueKey(
+                                          'load-restored-video',
+                                        ),
+                                        onPressed: playback.opening
+                                            ? null
+                                            : playback.toggle,
+                                        icon: Icon(
+                                          playback.opening
+                                              ? Icons.hourglass_top_rounded
+                                              : Icons.play_arrow_rounded,
+                                        ),
+                                        label: Text(
+                                          playback.opening ? '加载中…' : '播放',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else
+                              AdaptiveVideoControls(state),
+                          ],
+                        ),
+                      ),
+                    ),
+                  IgnorePointer(
+                    ignoring: !showAudio,
+                    child: ExcludeSemantics(
+                      excluding: !showAudio,
+                      child: AnimatedOpacity(
+                        key: const ValueKey('audio-mode-cover'),
+                        opacity: showAudio ? 1 : 0,
+                        duration:
+                            playback.audioOnly ||
+                                MediaQuery.disableAnimationsOf(context)
+                            ? Duration.zero
+                            : const Duration(milliseconds: 140),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Theme.of(context).colorScheme.primaryContainer,
+                                Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerLow,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          child: Center(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.headphones_rounded,
+                                    size: compact ? 44 : 76,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                    ),
+                                    child: Text(
+                                      item.title,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 17,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  if (!playback.mediaLoaded)
-                    Positioned.fill(
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          MediaArt(entry: item, radius: 0),
-                          Center(
-                            child: FilledButton.icon(
-                              key: const ValueKey('load-restored-video'),
-                              onPressed: playback.opening
-                                  ? null
-                                  : playback.toggle,
-                              icon: Icon(
-                                playback.opening
-                                    ? Icons.hourglass_top_rounded
-                                    : Icons.play_arrow_rounded,
-                              ),
-                              label: Text(playback.opening ? '加载中…' : '播放'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    AdaptiveVideoControls(state),
+                  ),
                 ],
-              ),
-            );
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: fill
-            ? SizedBox.expand(child: content)
-            : AspectRatio(aspectRatio: 16 / 9, child: content),
-      );
-    },
+              );
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: fill
+              ? SizedBox.expand(child: content)
+              : AspectRatio(aspectRatio: 16 / 9, child: content),
+        );
+      },
+    ),
   );
 }
 
@@ -176,6 +228,7 @@ class PlaybackBar extends StatelessWidget {
               Row(
                 children: [
                   InkWell(
+                    key: const ValueKey('playback-artwork-link'),
                     onTap: openPlayer,
                     borderRadius: BorderRadius.circular(12),
                     child: MediaArt(entry: item, width: 48, height: 48),
@@ -183,6 +236,7 @@ class PlaybackBar extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton(
+                      key: const ValueKey('playback-title-link'),
                       onPressed: openPlayer,
                       style: OutlinedButton.styleFrom(
                         alignment: Alignment.centerLeft,
@@ -191,27 +245,14 @@ class PlaybackBar extends StatelessWidget {
                           vertical: 6,
                         ),
                         textStyle: Theme.of(context).textTheme.bodyMedium,
+                        minimumSize: const Size(0, 40),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item?.title ?? '还没有播放内容',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            item == null
-                                ? '选择视频，或导入你的音乐'
-                                : '${playback.audioOnly ? '纯音频' : item.format} · ${playback.index + 1} / ${playback.queue.length}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: colors.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
+                      child: ValueListenableBuilder<bool>(
+                        valueListenable: app.windowVisible,
+                        builder: (context, visible, _) => MarqueeTitle(
+                          text: item?.title ?? '还没有播放内容',
+                          active: visible,
+                        ),
                       ),
                     ),
                   ),

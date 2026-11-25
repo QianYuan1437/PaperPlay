@@ -29,6 +29,8 @@ jobs:
         run: flutter test integration_test/playback_test.dart -d windows --dart-define="SCREENSHOT_DIR=${{ github.workspace }}/artifacts/ui" --dart-define=HEADLESS_AUDIO=true --dart-define="TEST_MEDIA=${{ github.workspace }}/test/fixtures/sample.mp4"
       - name: Restored video first-play regression
         run: flutter test integration_test/restore_playback_test.dart -d windows --dart-define="TEST_MEDIA=${{ github.workspace }}/test/fixtures/sample.mp4"
+      - name: Audio to video surface regression
+        run: flutter test integration_test/audio_switch_test.dart -d windows --dart-define="TEST_MEDIA=${{ github.workspace }}/test/fixtures/sample.mp4"
       - name: Silent wallpaper background regression
         run: flutter test integration_test/silent_background_test.dart -d windows --dart-define="SILENT_MEDIA=${{ github.workspace }}/test/fixtures/silent.mp4"
       - name: Audio playback flicker and interaction regression
