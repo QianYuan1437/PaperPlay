@@ -24,6 +24,7 @@ const server=http.createServer((req,res)=>{
   const browser=await chromium.launch({headless:true,...(process.env.PAPERPLAY_BROWSER_CHANNEL?{channel:process.env.PAPERPLAY_BROWSER_CHANNEL}:{})});
   try {
     const page=await browser.newPage({viewport:{width:1440,height:1000},colorScheme:'light'});
+    const go=async name=>{await page.locator(`[data-route=${name}]`).click();await page.waitForFunction(value=>document.querySelector('#navigation a[aria-current=page]')?.dataset.route===value,name);};
     const errors=[];page.on('pageerror',error=>{errors.push(error.message);console.error(error);});
     await page.route('https://api.github.com/**',route=>route.fulfill({json:{tag_name:'v1.0.10',assets:[{name:'PaperPlay-1.0.10-windows-x64-setup.exe',browser_download_url:'https://github.com/QianYuan1437/PaperPlay/releases/download/v1.0.10/PaperPlay-1.0.10-windows-x64-setup.exe'}]}}));
     await page.goto(url);await page.locator('#stage video').waitFor();
@@ -38,7 +39,7 @@ const server=http.createServer((req,res)=>{
     await page.locator('#blur-toggle').click();assert.equal(await page.locator('#blur-toggle').getAttribute('aria-pressed'),'true');
     await page.locator('#audio-toggle').click();assert(await page.locator('body').evaluate(body=>body.classList.contains('audio-only')));
     await page.locator('#audio-toggle').click();await page.locator('#blur-toggle').click();
-    await page.locator('[data-route=library]').click();
+    await go('library');
     await page.locator('#search').fill('山间');assert.equal(await page.locator('.media-card').count(),1);
     await page.locator('[data-action=favorite]').click();await page.locator('#search').fill('');await page.locator('[data-action=favorites]').click();assert.equal(await page.locator('.media-card').count(),1);
     await page.locator('[data-action=favorites]').click();await page.locator('.art-play[data-id=moon]').click();
@@ -52,42 +53,42 @@ const server=http.createServer((req,res)=>{
     await page.locator('#next').click();assert.notEqual(await page.locator('#now-title').textContent(),'月下浮光');
     await page.locator('#mute').click();assert(await page.locator('video').evaluate(video=>video.muted));
     await page.locator('#volume').fill('20');assert.equal(await page.locator('video').evaluate(video=>video.volume),.2);
-    await page.locator('[data-route=queue]').click();await page.locator('[data-action=down]').first().click();
+    await go('queue');await page.locator('[data-action=down]').first().click();
     assert.equal(await page.locator('.queue-title').first().textContent(),'山间来信');
     await page.locator('[data-action=save]').click();await page.locator('[data-action=clear]').click();assert.equal(await page.locator('.queue-list li').count(),0);
     await page.locator('[data-action=load]').click();assert.equal(await page.locator('.queue-list li').count(),3);
     await page.locator('[data-action=remove]').first().click();assert.equal(await page.locator('.queue-list li').count(),2);
-    await page.locator('[data-route=library]').click();await page.locator('[data-action=enqueue][data-id=forest]').click();assert.equal(await page.locator('#queue-count').textContent(),'3');
-    await page.locator('[data-route=local]').click();
+    await go('library');await page.locator('[data-action=enqueue][data-id=forest]').click();assert.equal(await page.locator('#queue-count').textContent(),'3');
+    await go('local');
     await page.locator('[data-action=import]').first().waitFor();
     const picker=page.waitForEvent('filechooser');await page.locator('[data-action=import]').first().click();
     await (await picker).setFiles(path.resolve(__dirname,'../test/fixtures/sample.mp4'));
     await page.locator('.media-card').waitFor();
     assert.equal(await page.locator('.media-card').count(),1);await page.locator('.art-play').click();await page.waitForFunction(()=>document.querySelector('video').currentTime>.1);
-    await page.locator('[data-route=appearance]').click();await page.locator('#view [data-accent=blue]').click();
+    await go('appearance');await page.locator('#view [data-accent=blue]').click();
     await page.locator('[data-setting=blur]').check();assert.equal(await page.locator('#blur-toggle').getAttribute('aria-pressed'),'true');
     await page.locator('[data-setting=reduce]').check();await page.locator('[data-setting=glass]').uncheck();
     await page.locator('#theme-toggle').click();assert(await page.locator('body').evaluate(body=>body.classList.contains('dark')));
     await page.waitForTimeout(400);
     const darkAudit=await page.evaluate(async()=>await axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa']}}));
     assert.deepEqual(darkAudit.violations.map(item=>({id:item.id,nodes:item.nodes.map(node=>node.target)})),[]);
-    await page.locator('[data-route=performance]').click();await page.waitForFunction(()=>document.querySelector('#fps').textContent!=='—');
+    await go('performance');await page.waitForFunction(()=>document.querySelector('#fps') && document.querySelector('#fps').textContent!=='—');
     await page.locator('[data-setting=stats]').uncheck();assert.equal(await page.locator('#fps').textContent(),'—');
-    await page.locator('[data-setting=stats]').check();await page.waitForFunction(()=>document.querySelector('#fps').textContent!=='—');
+    await page.locator('[data-setting=stats]').check();await page.waitForFunction(()=>document.querySelector('#fps') && document.querySelector('#fps').textContent!=='—');
     await page.screenshot({path:path.join(artifacts,'desktop-performance.png'),fullPage:true});
     await page.reload();assert.equal(await page.locator('body').getAttribute('data-accent'),'blue');assert.equal(await page.locator('#blur-toggle').getAttribute('aria-pressed'),'true');
-    await page.locator('#reset-demo').click();await page.locator('[data-route=overview]').click();
+    await page.locator('#reset-demo').click();await go('overview');
     await page.locator('#play').click();await page.waitForFunction(()=>document.querySelector('video').currentTime>.2);
     // Moving between views must retain the actual media element and playback.
-    for(const name of ['library','player','appearance','overview']){await page.locator(`[data-route=${name}]`).click();assert.equal(await page.locator('video').count(),1);assert(await page.locator('video').evaluate(video=>!video.paused));}
+    for(const name of ['library','player','appearance','overview']){await go(name);assert.equal(await page.locator('video').count(),1);assert(await page.locator('video').evaluate(video=>!video.paused));}
     await page.locator('#play').click();
     for(const width of [1280,960,768,390,360]){
       await page.setViewportSize({width,height:844});
       for(const name of ['overview','library','queue','player','local','performance','appearance']){
-        await page.locator(`[data-route=${name}]`).click();
+        await go(name);
         assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${name} overflows at ${width}`);
       }
-      await page.locator('[data-route=overview]').click();
+      await go('overview');
       if(width===390){await page.waitForTimeout(500);await page.screenshot({path:path.join(artifacts,'mobile-overview.png'),fullPage:true});}
     }
     const fallback=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
