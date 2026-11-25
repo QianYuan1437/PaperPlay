@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <psapi.h>
+#include <dwmapi.h>
 #include <flutter/standard_method_codec.h>
 
 #include "flutter/generated_plugin_registrant.h"
@@ -33,7 +34,16 @@ bool FlutterWindow::OnCreate() {
   metrics_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
       flutter_controller_->engine()->messenger(), "paperplay/metrics",
       &flutter::StandardMethodCodec::GetInstance());
-  metrics_channel_->SetMethodCallHandler([](const auto& call, auto result) {
+  metrics_channel_->SetMethodCallHandler([this](const auto& call, auto result) {
+    if (call.method_name() == "resetBackdrop") {
+      // flutter_acrylic 1.1.4 does not clear the modern Windows 11 backdrop
+      // when returning to solid/transparent. Reset it before applying the next
+      // material so an old acrylic surface cannot remain underneath.
+      const int none = 1;  // DWMSBT_NONE; SDK-independent for Windows 10 builds.
+      DwmSetWindowAttribute(GetHandle(), 38, &none, sizeof(none));
+      result->Success();
+      return;
+    }
     if (call.method_name() == "effects") {
       const auto supports_build = [](DWORD build) {
         OSVERSIONINFOEXW version{};
@@ -45,9 +55,12 @@ bool FlutterWindow::OnCreate() {
         return VerifyVersionInfoW(&version, VER_MAJORVERSION | VER_BUILDNUMBER, mask) != FALSE;
       };
       using V = flutter::EncodableValue;
+      int backdrop = 0;
+      const bool queried = SUCCEEDED(DwmGetWindowAttribute(GetHandle(), 38, &backdrop, sizeof(backdrop)));
       result->Success(V(flutter::EncodableMap{
         {V("acrylic"), V(supports_build(17134))},
         {V("mica"), V(supports_build(22000))},
+        {V("backdropType"), queried ? V(backdrop) : V()},
       }));
       return;
     }

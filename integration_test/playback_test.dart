@@ -353,7 +353,13 @@ void main() {
       expect(app.suspendVideoInBackground, isTrue);
       final capabilities = await PerformanceMonitor.channel
           .invokeMapMethod<String, dynamic>('effects');
-      for (final effect in ['transparent', 'acrylic', 'mica', 'solid']) {
+      for (final effect in [
+        'transparent',
+        'acrylic',
+        'mica',
+        'transparent',
+        'solid',
+      ]) {
         app.windowEffect = effect;
         app.changed();
         await desktop.syncAppearance();
@@ -361,6 +367,15 @@ void main() {
         final supported =
             effect == 'transparent' || capabilities?[effect] == true;
         expect(app.translucentWindow, supported);
+        final native = await PerformanceMonitor.channel
+            .invokeMapMethod<String, dynamic>('effects');
+        if (native?['backdropType'] != null) {
+          expect(native!['backdropType'], switch (effect) {
+            'acrylic' => 3,
+            'mica' => 2,
+            _ => 1,
+          });
+        }
         expect(tester.takeException(), isNull);
       }
       app.previewCacheMiB = 32;

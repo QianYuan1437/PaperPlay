@@ -34,6 +34,7 @@ class WindowAppearance {
               '${effect == 'mica' ? '云母需要 Windows 11' : '亚克力需要 Windows 10 1803 或更新版本'}，已使用纯色';
           effect = 'solid';
         }
+        await PerformanceMonitor.channel.invokeMethod<void>('resetBackdrop');
         await acrylic.Window.setEffect(
           effect: switch (effect) {
             'transparent' => acrylic.WindowEffect.transparent,
