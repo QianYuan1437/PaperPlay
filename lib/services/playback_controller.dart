@@ -20,7 +20,7 @@ class PlaybackController extends ChangeNotifier {
     video = VideoController(player);
     _subscriptions.add(
       player.stream.completed.listen((done) {
-        if (done && !_opening && error == null) unawaited(next(manual: false));
+        if (done && !_opening) unawaited(next(manual: false));
       }),
     );
     _subscriptions.add(player.stream.playing.listen((_) => notifyListeners()));

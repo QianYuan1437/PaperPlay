@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:paperplay/models/media_entry.dart';
+import 'package:paperplay/models/queue_order.dart';
 import 'package:paperplay/services/playback_controller.dart';
 import 'package:paperplay/ui/player_view.dart';
 
@@ -129,5 +130,17 @@ void main() {
       reason:
           'Skipping a missing file must not mark the next valid file as failed',
     );
+    playback.setMode(PlayMode.sequential);
+    await playback.play([
+      MediaEntry(path: file.path, title: 'First', source: MediaSource.local),
+      MediaEntry(path: file.path, title: 'Second', source: MediaSource.local),
+    ]);
+    // Native diagnostics must not block normal end-of-file queue progression.
+    // ignore: invalid_use_of_protected_member
+    native.errorController.add('Video output initialization warning');
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(seconds: 4)),
+    );
+    expect(playback.index, 1);
   });
 }
