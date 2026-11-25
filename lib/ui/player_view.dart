@@ -182,8 +182,16 @@ class PlaybackBar extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: InkWell(
-                      onTap: openPlayer,
+                    child: OutlinedButton(
+                      onPressed: openPlayer,
+                      style: OutlinedButton.styleFrom(
+                        alignment: Alignment.centerLeft,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        textStyle: Theme.of(context).textTheme.bodyMedium,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -293,7 +301,7 @@ class PlaybackBar extends StatelessWidget {
                           style: TextStyle(color: colors.error, fontSize: 12),
                         ),
                       ),
-                      TextButton(
+                      OutlinedButton(
                         onPressed: playback.next,
                         child: const Text('跳过'),
                       ),

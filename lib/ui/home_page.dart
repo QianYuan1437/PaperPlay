@@ -13,13 +13,6 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) => PageFrame(
     title: '让收藏，重新流动。',
     subtitle: '订阅与本地影音，一处浏览，自在播放。',
-    actions: [
-      OutlinedButton.icon(
-        onPressed: app.busy ? null : app.scan,
-        icon: const Icon(Icons.refresh_rounded, size: 18),
-        label: Text(app.busy ? '扫描中…' : '刷新媒体库'),
-      ),
-    ],
     children: [
       LayoutBuilder(
         builder: (context, constraints) {
@@ -37,12 +30,24 @@ class HomePage extends StatelessWidget {
             key: ValueKey('overview-card-$index'),
             height: cardHeight,
             child: SectionCard(
+              leading: index == 1
+                  ? OutlinedButton.icon(
+                      onPressed: app.busy ? null : app.scan,
+                      icon: const Icon(Icons.refresh_rounded, size: 16),
+                      label: Text(app.busy ? '扫描中…' : '刷新媒体库'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                    )
+                  : null,
               title: title,
               icon: icon,
-              trailing: TextButton(
-                onPressed: () => go(index),
-                child: Text(action),
-              ),
+              trailing: index == 1
+                  ? null
+                  : OutlinedButton(
+                      onPressed: () => go(index),
+                      child: Text(action),
+                    ),
               child: Expanded(child: child),
             ),
           );
@@ -55,12 +60,22 @@ class HomePage extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    '${app.subscriptions.length} 个视频收藏',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${app.subscriptions.length} 个视频收藏',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      OutlinedButton(
+                        onPressed: () => go(1),
+                        child: const Text('浏览全部 →'),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                   Expanded(

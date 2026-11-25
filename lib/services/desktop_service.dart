@@ -11,6 +11,7 @@ class DesktopService with WindowListener, TrayListener {
   final AppState app;
   bool trayReady = false;
   bool _quitting = false;
+  bool _disposed = false;
   bool? displayedPlaying;
   bool? _requestedPlaying;
   String? _requestedTitle;
@@ -35,7 +36,7 @@ class DesktopService with WindowListener, TrayListener {
   }
 
   Future<void> syncPlaybackIndicator() {
-    if (!trayReady || _quitting) return Future.value();
+    if (!trayReady || _quitting || _disposed) return Future.value();
     final playing = app.playback.playing;
     final title = app.playback.current?.title ?? '你的私人影音库';
     if (_requestedPlaying == playing && _requestedTitle == title) {
@@ -45,6 +46,7 @@ class DesktopService with WindowListener, TrayListener {
     _requestedTitle = title;
     _indicatorUpdates = _indicatorUpdates
         .then((_) async {
+          if (_quitting || _disposed) return;
           final icon = playing ? 'assets/tray_playing.ico' : 'assets/tray.ico';
           await trayManager.setIcon(icon);
           await windowManager.setIcon(icon);
@@ -74,10 +76,15 @@ class DesktopService with WindowListener, TrayListener {
   }
 
   Future<void> dispose() async {
+    _disposed = true;
     app.playback.removeListener(_onPlaybackChanged);
     windowManager.removeListener(this);
     trayManager.removeListener(this);
-    await _indicatorUpdates;
+    if (_quitting) {
+      await _bestEffort(_indicatorUpdates, const Duration(milliseconds: 500));
+    } else {
+      await _indicatorUpdates;
+    }
     if (trayReady) {
       await trayManager.destroy();
       trayReady = false;
@@ -85,6 +92,7 @@ class DesktopService with WindowListener, TrayListener {
   }
 
   Future<void> show() async {
+    if (_quitting || _disposed) return;
     if (await windowManager.isMinimized()) await windowManager.restore();
     await windowManager.show();
     // The Windows plugin uses ShowWindowAsync; wait for the visibility change.
@@ -103,14 +111,33 @@ class DesktopService with WindowListener, TrayListener {
     }
   }
 
+  Future<void> _bestEffort(
+    Future<void> task, [
+    Duration limit = const Duration(seconds: 2),
+  ]) async {
+    try {
+      await task.timeout(limit);
+    } catch (_) {
+      // A native cleanup failure must not keep the desktop window alive.
+    }
+  }
+
   Future<void> quit() async {
     if (_quitting) return;
     _quitting = true;
-    await app.save();
-    await app.store.flush();
-    await dispose();
-    await app.playback.shutdown();
-    await windowManager.destroy();
+    await _bestEffort(windowManager.hide());
+    await _bestEffort(dispose());
+    app.playback.onPersist = null;
+    try {
+      // Snapshot before disposing the native player; keep disk writes intact.
+      final saved = app.save();
+      final cleanup = _bestEffort(app.playback.shutdown());
+      await saved;
+      await app.store.flush();
+      await cleanup;
+    } finally {
+      await windowManager.destroy();
+    }
   }
 
   @override
@@ -125,11 +152,13 @@ class DesktopService with WindowListener, TrayListener {
 
   @override
   void onTrayIconRightMouseDown() {
+    if (_quitting || _disposed) return;
     unawaited(trayManager.popUpContextMenu());
   }
 
   @override
   void onTrayMenuItemClick(MenuItem menuItem) {
+    if (_quitting) return;
     switch (menuItem.key) {
       case 'show':
         unawaited(show());

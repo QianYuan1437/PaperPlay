@@ -204,7 +204,7 @@ class _AppShellState extends State<AppShell> {
                         ),
                         Padding(
                           padding: const EdgeInsets.only(bottom: 16),
-                          child: TextButton(
+                          child: OutlinedButton(
                             key: const ValueKey('sidebar-version'),
                             onPressed: () {
                               setState(() {

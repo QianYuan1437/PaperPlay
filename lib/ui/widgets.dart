@@ -10,11 +10,13 @@ class SectionCard extends StatelessWidget {
     required this.icon,
     required this.child,
     this.trailing,
+    this.leading,
   });
   final String title;
   final IconData icon;
   final Widget child;
   final Widget? trailing;
+  final Widget? leading;
   @override
   Widget build(BuildContext context) => Card(
     child: Padding(
@@ -24,6 +26,7 @@ class SectionCard extends StatelessWidget {
         children: [
           Row(
             children: [
+              if (leading != null) ...[leading!, const SizedBox(width: 8)],
               Icon(
                 icon,
                 size: 21,
@@ -287,7 +290,7 @@ Future<String?> askName(
         ),
       ),
       actions: [
-        TextButton(
+        OutlinedButton(
           onPressed: () => Navigator.pop(context),
           child: const Text('取消'),
         ),

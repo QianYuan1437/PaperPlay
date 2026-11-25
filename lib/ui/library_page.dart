@@ -152,7 +152,7 @@ class _LibraryPageState extends State<LibraryPage> {
                 '${filtered.length} 个媒体${chosen.isEmpty ? '' : ' · 已选 ${chosen.length} 项'}',
                 style: const TextStyle(fontSize: 12),
               ),
-              TextButton(
+              OutlinedButton(
                 onPressed: filtered.isEmpty
                     ? null
                     : () => setState(() {
@@ -195,7 +195,7 @@ class _LibraryPageState extends State<LibraryPage> {
                 icon: const Icon(Icons.playlist_add_rounded, size: 18),
                 label: const Text('加入队列'),
               ),
-              TextButton(
+              OutlinedButton(
                 onPressed: actionItems.isEmpty
                     ? null
                     : () => _save(actionItems),
@@ -207,7 +207,7 @@ class _LibraryPageState extends State<LibraryPage> {
                   options: const {'all': '全部类型', 'video': '视频', 'audio': '音频'},
                   onSelected: (v) => setState(() => kind = v),
                 ),
-                TextButton(
+                OutlinedButton(
                   onPressed: app.busy
                       ? null
                       : () => importFiles(app, folder: true),
@@ -215,7 +215,7 @@ class _LibraryPageState extends State<LibraryPage> {
                 ),
               ],
               if (chosen.isNotEmpty)
-                TextButton(
+                OutlinedButton(
                   onPressed: () => _forget(chosen),
                   child: const Text('移出媒体库'),
                 ),
@@ -330,7 +330,7 @@ class _LibraryPageState extends State<LibraryPage> {
           '移除 ${items.length} 项记录，磁盘文件不会删除，也不会取消 Steam 订阅。订阅项目再次扫描后会重新显示。',
         ),
         actions: [
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('取消'),
           ),

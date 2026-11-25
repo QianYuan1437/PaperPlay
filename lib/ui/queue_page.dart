@@ -16,24 +16,6 @@ class QueuePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            PageHeading(
-              title: '播放队列',
-              subtitle: '为此刻的心情，排一张歌单。视频也可以只听声音。',
-              actions: [
-                FilledButton.icon(
-                  onPressed: playback.queue.isEmpty
-                      ? null
-                      : () async {
-                          final items = List.of(playback.queue);
-                          final name = await askName(context);
-                          if (name != null) app.savePlaylist(name, items);
-                        },
-                  icon: const Icon(Icons.playlist_add_rounded, size: 18),
-                  label: const Text('保存列表'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
             Wrap(
               spacing: 12,
               runSpacing: 8,
@@ -54,9 +36,20 @@ class QueuePage extends StatelessWidget {
                   '${playback.queue.length} 首',
                   style: const TextStyle(fontSize: 13),
                 ),
-                TextButton(
+                OutlinedButton(
                   onPressed: playback.queue.isEmpty ? null : playback.clear,
                   child: const Text('清空队列'),
+                ),
+                FilledButton.icon(
+                  onPressed: playback.queue.isEmpty
+                      ? null
+                      : () async {
+                          final items = List.of(playback.queue);
+                          final name = await askName(context);
+                          if (name != null) app.savePlaylist(name, items);
+                        },
+                  icon: const Icon(Icons.playlist_add_rounded, size: 18),
+                  label: const Text('保存列表'),
                 ),
               ],
             ),
@@ -215,7 +208,7 @@ class QueuePage extends StatelessWidget {
                                                             '「${list.name}」将保存当前 ${playback.queue.length} 个媒体及其顺序。',
                                                           ),
                                                           actions: [
-                                                            TextButton(
+                                                            OutlinedButton(
                                                               onPressed: () =>
                                                                   Navigator.pop(
                                                                     context,
@@ -257,7 +250,7 @@ class QueuePage extends StatelessWidget {
                                                   '删除「${list.name}」，原始媒体文件不受影响。',
                                                 ),
                                                 actions: [
-                                                  TextButton(
+                                                  OutlinedButton(
                                                     onPressed: () =>
                                                         Navigator.pop(
                                                           context,

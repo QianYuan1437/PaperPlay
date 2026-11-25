@@ -195,7 +195,7 @@ class SettingsPage extends StatelessWidget {
                       Process.run('explorer.exe', [app.store.file.parent.path]),
                   child: const Text('打开数据目录'),
                 ),
-                TextButton(
+                OutlinedButton(
                   onPressed: () => showLicensePage(
                     context: context,
                     applicationName: 'PaperPlay',

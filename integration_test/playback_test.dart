@@ -49,7 +49,7 @@ void main() {
       final app = AppState(
         LibraryStore(File(p.join(temporary.path, 'library.json'))),
         playback,
-        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.7'}),
+        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.8'}),
       );
       await app.initialize();
       app.autoScan = false;
@@ -155,6 +155,12 @@ void main() {
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull, reason: '$label at $size');
           expect(find.byType(BlurToggle), findsWidgets);
+          if (label == '播放队列' && size.width == 1040) {
+            expect(
+              tester.getCenter(find.text('保存列表')).dy,
+              closeTo(tester.getCenter(find.text('清空队列')).dy, 2),
+            );
+          }
           if (label == '播放器') {
             final toolbar = find.byKey(const ValueKey('player-toolbar'));
             final audio = find.descendant(
@@ -282,7 +288,7 @@ void main() {
       expect(app.blurPreviews, isTrue);
       await tester.tap(find.byKey(const ValueKey('sidebar-version')));
       await tester.pumpAndSettle();
-      expect(find.text('发现新版本 v1.0.7'), findsOneWidget);
+      expect(find.text('发现新版本 v1.0.8'), findsOneWidget);
       expect(find.text('查看并下载更新'), findsOneWidget);
       await tester.ensureVisible(find.text('关于 PaperPlay'));
       await tester.pumpAndSettle();

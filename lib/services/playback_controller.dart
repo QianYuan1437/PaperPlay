@@ -34,6 +34,8 @@ class PlaybackController extends ChangeNotifier {
   bool audioOnly = false;
   bool _opening = false;
   bool _loaded = false;
+  bool _closing = false;
+  Future<void>? _shutdown;
   String? error;
   VoidCallback? onPersist;
   Future<void> _pending = Future.value();
@@ -44,19 +46,22 @@ class PlaybackController extends ChangeNotifier {
   bool get opening => _opening;
 
   Future<void> _serial(Future<void> Function() action) {
+    if (_closing) return Future.value();
     final task = _pending.then((_) async {
+      if (_closing) return;
       try {
         await action();
       } catch (e) {
         error = '播放失败：$e';
       }
-      notifyListeners();
+      if (!_closing) notifyListeners();
     });
     _pending = task.catchError((Object _) {});
     return task;
   }
 
   void _changed() {
+    if (_closing) return;
     notifyListeners();
     onPersist?.call();
   }
@@ -201,11 +206,15 @@ class PlaybackController extends ChangeNotifier {
     }
     _changed();
   });
-  Future<void> shutdown() async {
-    await _pending;
+  Future<void> shutdown() => _shutdown ??= _shutdownOnce();
+
+  Future<void> _shutdownOnce() async {
+    _closing = true;
+    onPersist = null;
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }
+    await _pending;
     await player.dispose();
     super.dispose();
   }
