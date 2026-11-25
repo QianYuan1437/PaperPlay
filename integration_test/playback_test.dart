@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:paperplay/services/update_service.dart';
 import 'package:paperplay/ui/blur_toggle.dart';
+import 'package:paperplay/ui/performance_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -375,7 +376,16 @@ void main() {
         await tester.pumpAndSettle();
       }
       final statistics = find.byKey(const ValueKey('performance-enabled'));
-      await tester.ensureVisible(statistics);
+      await tester.scrollUntilVisible(
+        statistics,
+        180,
+        scrollable: find
+            .descendant(
+              of: find.byType(PerformancePage),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
       await tester.pumpAndSettle();
       await tester.tap(statistics);
       await tester.pumpAndSettle();
