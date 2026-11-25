@@ -16,6 +16,7 @@ import 'package:paperplay/models/queue_order.dart';
 import 'package:paperplay/services/desktop_service.dart';
 import 'package:paperplay/services/library_store.dart';
 import 'package:paperplay/services/playback_controller.dart';
+import 'package:paperplay/services/performance_monitor.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -109,6 +110,27 @@ void main() {
       expect(playback.player.state.track.video.id, 'no');
       await playback.setAudioOnly(false);
       expect(playback.player.state.track.video.id, isNot('no'));
+      await playback.setBackgroundVideoSuppressed(true);
+      expect(playback.audioOnly, isFalse);
+      expect(playback.player.state.track.video.id, 'no');
+      await playback.setAudioOnly(true);
+      await playback.setBackgroundVideoSuppressed(false);
+      expect(playback.player.state.track.video.id, 'no');
+      await playback.setAudioOnly(false);
+      expect(playback.player.state.track.video.id, isNot('no'));
+      final counters = await PerformanceMonitor.readNative();
+      expect(counters.workingSet, greaterThan(0));
+      expect(counters.cpuTicks, greaterThan(0));
+      await desktop.hide();
+      await playback.setAudioOnly(
+        false,
+      ); // Wait for the serialized visibility update.
+      expect(playback.backgroundVideoSuppressed, isTrue);
+      expect(playback.player.state.track.video.id, 'no');
+      await desktop.show();
+      await playback.setAudioOnly(false);
+      expect(playback.backgroundVideoSuppressed, isFalse);
+      expect(playback.player.state.track.video.id, isNot('no'));
       await playback.jump(1);
       await playback.player.pause();
       await playback.reorder(1, 0);
@@ -149,12 +171,22 @@ void main() {
       ]) {
         await windowManager.setSize(size);
         await tester.pumpAndSettle();
-        for (final label in ['订阅库', '播放队列', '播放器', '本地媒体', '设置', '概览']) {
+        for (final label in ['订阅库', '播放队列', '播放器', '本地媒体', '设置', '性能', '概览']) {
           await tester.ensureVisible(find.text(label).first);
           await tester.tap(find.text(label).first);
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull, reason: '$label at $size');
           expect(find.byType(BlurToggle), findsWidgets);
+          if (label == '性能') {
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 6200)),
+            );
+            await tester.pumpAndSettle();
+            expect(find.text('CPU'), findsOneWidget);
+            expect(find.text('内存'), findsOneWidget);
+            expect(find.text('进程 I/O'), findsOneWidget);
+            expect(find.text('暂时无法读取进程统计'), findsNothing);
+          }
           if (label == '播放队列' && size.width == 1040) {
             expect(
               tester.getCenter(find.text('保存列表')).dy,
@@ -211,6 +243,7 @@ void main() {
               const ValueKey('settings-audio-only'),
             );
             await tester.ensureVisible(audioSwitch);
+            await tester.pumpAndSettle();
             await tester.tap(audioSwitch);
             await tester.runAsync(
               () => Future<void>.delayed(const Duration(milliseconds: 300)),
@@ -300,9 +333,52 @@ void main() {
       expect(app.blurPreviews, isFalse);
       await tester.tap(find.byType(BlurToggle).first);
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('性能').first);
+      await tester.tap(find.text('性能').first);
+      await tester.pumpAndSettle();
+      final backgroundSwitch = find.widgetWithText(SwitchListTile, '后台停止视频解码');
+      await tester.ensureVisible(backgroundSwitch);
+      await tester.pumpAndSettle();
+      await tester.tap(backgroundSwitch);
+      await tester.pumpAndSettle();
+      expect(app.suspendVideoInBackground, isFalse);
+      await tester.ensureVisible(find.text('设置').first);
+      await tester.tap(find.text('设置').first);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(backgroundSwitch);
+      await tester.pumpAndSettle();
+      expect(tester.widget<SwitchListTile>(backgroundSwitch).value, isFalse);
+      await tester.tap(backgroundSwitch);
+      await tester.pumpAndSettle();
+      expect(app.suspendVideoInBackground, isTrue);
+      final capabilities = await PerformanceMonitor.channel
+          .invokeMapMethod<String, dynamic>('effects');
+      for (final effect in ['transparent', 'acrylic', 'mica', 'solid']) {
+        app.windowEffect = effect;
+        app.changed();
+        await desktop.syncAppearance();
+        await tester.pumpAndSettle();
+        final supported =
+            effect == 'transparent' || capabilities?[effect] == true;
+        expect(app.translucentWindow, supported);
+        expect(tester.takeException(), isNull);
+      }
+      app.previewCacheMiB = 32;
+      app.sampleSeconds = 5;
+      app.reduceMotion = true;
+      app.changed();
+      expect(
+        PaintingBinding.instance.imageCache.maximumSizeBytes,
+        32 * 1048576,
+      );
       await app.save();
       expect((await app.store.load())['queue'], hasLength(2));
       expect((await app.store.load())['blurPreviews'], isTrue);
+      final saved = await app.store.load();
+      expect(saved['sampleSeconds'], 5);
+      expect(saved['previewCacheMiB'], 32);
+      expect(saved['reduceMotion'], isTrue);
+      expect(saved['suspendVideoInBackground'], isTrue);
       // Missing items are skipped with bounded retries, including repeat-one.
       final missing = MediaEntry(
         path: p.join(temporary.path, 'missing.mp4'),

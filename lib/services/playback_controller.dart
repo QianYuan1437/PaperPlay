@@ -32,6 +32,8 @@ class PlaybackController extends ChangeNotifier {
   int index = 0;
   PlayMode mode = PlayMode.repeatAll;
   bool audioOnly = false;
+  bool backgroundVideoSuppressed = false;
+  bool get videoDisabled => audioOnly || backgroundVideoSuppressed;
   bool _opening = false;
   bool _loaded = false;
   bool _closing = false;
@@ -91,7 +93,7 @@ class PlaybackController extends ChangeNotifier {
         if (await File(item.path).exists()) {
           await player.open(Media(item.path), play: false);
           await player.setVideoTrack(
-            audioOnly ? VideoTrack.no() : VideoTrack.auto(),
+            videoDisabled ? VideoTrack.no() : VideoTrack.auto(),
           );
           await player.play();
           _loaded = true;
@@ -157,9 +159,20 @@ class PlaybackController extends ChangeNotifier {
   Future<void> setAudioOnly(bool value) => _serial(() async {
     audioOnly = value;
     if (_loaded) {
-      await player.setVideoTrack(value ? VideoTrack.no() : VideoTrack.auto());
+      await player.setVideoTrack(
+        videoDisabled ? VideoTrack.no() : VideoTrack.auto(),
+      );
     }
     _changed();
+  });
+  Future<void> setBackgroundVideoSuppressed(bool value) => _serial(() async {
+    if (backgroundVideoSuppressed == value) return;
+    backgroundVideoSuppressed = value;
+    if (_loaded) {
+      await player.setVideoTrack(
+        videoDisabled ? VideoTrack.no() : VideoTrack.auto(),
+      );
+    }
   });
   void setMode(PlayMode value) {
     mode = value;

@@ -9,6 +9,7 @@ import 'library_page.dart';
 import 'player_view.dart';
 import 'queue_page.dart';
 import 'settings_page.dart';
+import 'performance_page.dart';
 import 'brand_icon.dart';
 import 'blur_toggle.dart';
 
@@ -87,6 +88,7 @@ class _AppShellState extends State<AppShell> {
           source: MediaSource.local,
           openPlayer: () => go(3),
         ),
+        6 => PerformancePage(app: app),
         _ => SettingsPage(key: ValueKey(settingsVisit), app: app),
       };
       return Scaffold(
@@ -163,7 +165,7 @@ class _AppShellState extends State<AppShell> {
                         Expanded(
                           child: SingleChildScrollView(
                             child: SizedBox(
-                              height: 400,
+                              height: 462,
                               child: NavigationRail(
                                 selectedIndex: index,
                                 onDestinationSelected: go,
@@ -196,6 +198,10 @@ class _AppShellState extends State<AppShell> {
                                   NavigationRailDestination(
                                     icon: Icon(Icons.tune_rounded),
                                     label: Text('设置'),
+                                  ),
+                                  NavigationRailDestination(
+                                    icon: Icon(Icons.speed_rounded),
+                                    label: Text('性能'),
                                   ),
                                 ],
                               ),

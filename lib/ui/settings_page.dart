@@ -7,6 +7,7 @@ import '../app_info.dart';
 import '../services/update_service.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'performance_options.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key, required this.app});
@@ -229,8 +230,26 @@ class SettingsPage extends StatelessWidget {
           LayoutBuilder(
             builder: (context, constraints) {
               final update = _UpdateCard(app: app);
+              final performance = SectionCard(
+                title: '性能配置',
+                icon: Icons.speed_rounded,
+                child: PerformanceOptions(app: app),
+              );
+              final appearance = SectionCard(
+                title: '窗口材质与动效',
+                icon: Icons.blur_on_rounded,
+                child: AppearanceOptions(app: app),
+              );
               if (constraints.maxWidth < 700) {
-                return column([update, cards[0], cards[2], cards[1], cards[3]]);
+                return column([
+                  update,
+                  cards[0],
+                  cards[2],
+                  cards[1],
+                  performance,
+                  appearance,
+                  cards[3],
+                ]);
               }
               Widget pair(Widget left, Widget right) => IntrinsicHeight(
                 child: Row(
@@ -245,6 +264,7 @@ class SettingsPage extends StatelessWidget {
               return column([
                 pair(cards[0], update),
                 pair(cards[2], cards[1]),
+                pair(performance, appearance),
                 cards[3],
               ]);
             },

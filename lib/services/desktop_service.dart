@@ -5,8 +5,9 @@ import 'package:window_manager/window_manager.dart';
 import '../app_state.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'window_layout.dart';
+import 'window_appearance.dart';
 
-class DesktopService with WindowListener, TrayListener {
+class DesktopService with WindowListener, TrayListener, WidgetsBindingObserver {
   DesktopService(this.app);
   final AppState app;
   bool trayReady = false;
@@ -16,8 +17,13 @@ class DesktopService with WindowListener, TrayListener {
   bool? _requestedPlaying;
   String? _requestedTitle;
   Future<void> _indicatorUpdates = Future.value();
+  final _appearance = WindowAppearance();
+  bool? _backgroundVideoRequested;
   Future<void> initialize() async {
     windowManager.addListener(this);
+    WidgetsBinding.instance.addObserver(this);
+    app.addListener(_onSettingsChanged);
+    _onSettingsChanged();
     await windowManager.setPreventClose(true);
     try {
       await trayManager.setIcon('assets/tray.ico');
@@ -30,6 +36,36 @@ class DesktopService with WindowListener, TrayListener {
       app.message = '托盘初始化失败，将保留任务栏窗口：$e';
     }
   }
+
+  void _onSettingsChanged() {
+    if (_quitting || _disposed) return;
+    PaintingBinding.instance.imageCache.maximumSizeBytes =
+        app.previewCacheMiB * 1048576;
+    final suspend = !app.windowVisible.value && app.suspendVideoInBackground;
+    if (_backgroundVideoRequested != suspend) {
+      _backgroundVideoRequested = suspend;
+      unawaited(app.playback.setBackgroundVideoSuppressed(suspend));
+    }
+    unawaited(syncAppearance());
+  }
+
+  Future<void> syncAppearance() => _appearance.apply(app);
+
+  void _setVisible(bool visible) {
+    if (_quitting || _disposed || app.windowVisible.value == visible) return;
+    app.windowVisible.value = visible;
+    if (!visible && app.releasePreviewCache) {
+      PaintingBinding.instance.imageCache.clear();
+    }
+    _onSettingsChanged();
+  }
+
+  @override
+  void didChangePlatformBrightness() => _onSettingsChanged();
+  @override
+  void onWindowMinimize() => _setVisible(false);
+  @override
+  void onWindowRestore() => _setVisible(true);
 
   void _onPlaybackChanged() {
     unawaited(syncPlaybackIndicator());
@@ -77,6 +113,9 @@ class DesktopService with WindowListener, TrayListener {
 
   Future<void> dispose() async {
     _disposed = true;
+    _appearance.disposed = true;
+    app.removeListener(_onSettingsChanged);
+    WidgetsBinding.instance.removeObserver(this);
     app.playback.removeListener(_onPlaybackChanged);
     windowManager.removeListener(this);
     trayManager.removeListener(this);
@@ -101,14 +140,17 @@ class DesktopService with WindowListener, TrayListener {
       await Future<void>.delayed(const Duration(milliseconds: 25));
     }
     await windowManager.focus();
+    _setVisible(true);
   }
 
   Future<void> hide() async {
+    if (_quitting || _disposed) return;
     if (trayReady) {
       await windowManager.hide();
     } else {
       await windowManager.minimize();
     }
+    _setVisible(false);
   }
 
   Future<void> _bestEffort(

@@ -100,7 +100,7 @@ class PaperPlayApp extends StatefulWidget {
 }
 
 class _PaperPlayAppState extends State<PaperPlayApp> {
-  int? _themeAccent;
+  Object? _themeKey;
   late ThemeData _lightTheme, _darkTheme;
   AppState get app => widget.app;
   @override
@@ -108,10 +108,20 @@ class _PaperPlayAppState extends State<PaperPlayApp> {
     listenable: app,
     builder: (context, _) {
       // Library and privacy changes must not restart the global theme animation.
-      if (_themeAccent != app.accent) {
-        _themeAccent = app.accent;
-        _lightTheme = buildTheme(Brightness.light, accent: app.accent);
-        _darkTheme = buildTheme(Brightness.dark, accent: app.accent);
+      final opacity = app.translucentWindow ? app.surfaceOpacity : 1.0;
+      final key = (app.accent, opacity);
+      if (_themeKey != key) {
+        _themeKey = key;
+        _lightTheme = buildTheme(
+          Brightness.light,
+          accent: app.accent,
+          opacity: opacity,
+        );
+        _darkTheme = buildTheme(
+          Brightness.dark,
+          accent: app.accent,
+          opacity: opacity,
+        );
       }
       return MaterialApp(
         title: 'PaperPlay',
@@ -119,11 +129,19 @@ class _PaperPlayAppState extends State<PaperPlayApp> {
         theme: _lightTheme,
         darkTheme: _darkTheme,
         themeMode: app.themeMode,
+        themeAnimationDuration: app.reduceMotion
+            ? Duration.zero
+            : kThemeAnimationDuration,
         locale: const Locale('zh', 'CN'),
         supportedLocales: const [Locale('zh', 'CN'), Locale('en')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        builder: (context, child) =>
-            PreviewPrivacy(enabled: app.blurPreviews, child: child!),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            disableAnimations:
+                app.reduceMotion || MediaQuery.of(context).disableAnimations,
+          ),
+          child: PreviewPrivacy(enabled: app.blurPreviews, child: child!),
+        ),
         home: AppShell(app: app, desktop: widget.desktop),
       );
     },

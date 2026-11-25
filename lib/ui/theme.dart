@@ -33,7 +33,11 @@ final kMenuItemShape = RoundedRectangleBorder(
   borderRadius: BorderRadius.circular(kRadius - 4),
 );
 
-ThemeData buildTheme(Brightness b, {int accent = kDefaultAccent}) {
+ThemeData buildTheme(
+  Brightness b, {
+  int accent = kDefaultAccent,
+  double opacity = 1,
+}) {
   final scheme = ColorScheme.fromSeed(seedColor: Color(accent), brightness: b);
   final dark = b == Brightness.dark;
   final background = Color.alphaBlend(
@@ -65,7 +69,7 @@ ThemeData buildTheme(Brightness b, {int accent = kDefaultAccent}) {
     useMaterial3: true,
     colorScheme: scheme,
     brightness: b,
-    scaffoldBackgroundColor: background,
+    scaffoldBackgroundColor: background.withValues(alpha: opacity),
     canvasColor: surface,
     focusColor: scheme.primaryContainer.withValues(alpha: dark ? 0.35 : 0.55),
     hoverColor: scheme.primary.withValues(alpha: 0.06),
@@ -80,7 +84,7 @@ ThemeData buildTheme(Brightness b, {int accent = kDefaultAccent}) {
     cardTheme: CardThemeData(
       elevation: 0,
       margin: EdgeInsets.zero,
-      color: surface,
+      color: surface.withValues(alpha: opacity),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(kCardRadius),
         side: BorderSide(color: outline),

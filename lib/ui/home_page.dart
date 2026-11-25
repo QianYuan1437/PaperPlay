@@ -223,6 +223,23 @@ class HomePage extends StatelessWidget {
           );
         },
       ),
+      SectionCard(
+        title: '性能',
+        icon: Icons.speed_rounded,
+        trailing: OutlinedButton.icon(
+          onPressed: () => go(6),
+          icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+          label: const Text('查看性能'),
+        ),
+        child: Wrap(
+          spacing: 20,
+          runSpacing: 8,
+          children: [
+            Text('后台视频解码：${app.suspendVideoInBackground ? '自动暂停' : '保持'}'),
+            Text('预览缓存：${app.previewCacheMiB} MB'),
+          ],
+        ),
+      ),
     ],
   );
 }

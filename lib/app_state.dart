@@ -29,6 +29,16 @@ class AppState extends ChangeNotifier {
   bool closeToTray = true;
   bool autoScan = true;
   bool blurPreviews = false;
+  bool suspendVideoInBackground = true;
+  bool releasePreviewCache = true;
+  bool reduceMotion = false;
+  int previewCacheMiB = 64;
+  int sampleSeconds = 2;
+  String windowEffect = 'solid';
+  double surfaceOpacity = 0.82;
+  bool translucentWindow = false;
+  String? appearanceMessage;
+  final ValueNotifier<bool> windowVisible = ValueNotifier(true);
   bool busy = false;
   String? message;
   List<String> warnings = [];
@@ -56,6 +66,24 @@ class AppState extends ChangeNotifier {
       closeToTray = data['closeToTray'] as bool? ?? true;
       autoScan = data['autoScan'] as bool? ?? true;
       blurPreviews = data['blurPreviews'] as bool? ?? false;
+      suspendVideoInBackground =
+          data['suspendVideoInBackground'] as bool? ?? true;
+      releasePreviewCache = data['releasePreviewCache'] as bool? ?? true;
+      reduceMotion = data['reduceMotion'] as bool? ?? false;
+      final cache = data['previewCacheMiB'];
+      previewCacheMiB = [32, 64, 128].contains(cache) ? cache as int : 64;
+      final interval = data['sampleSeconds'];
+      sampleSeconds = [1, 2, 5].contains(interval) ? interval as int : 2;
+      final effect = data['windowEffect'];
+      windowEffect =
+          ['solid', 'transparent', 'acrylic', 'mica'].contains(effect)
+          ? effect as String
+          : 'solid';
+      surfaceOpacity = (data['surfaceOpacity'] as num? ?? 0.82)
+          .toDouble()
+          .clamp(0.55, 1);
+      PaintingBinding.instance.imageCache.maximumSizeBytes =
+          previewCacheMiB * 1048576;
       lastScan = DateTime.tryParse(data['lastScan'] as String? ?? '');
       playback.queue.addAll(entries('queue'));
       playback.index = (data['queueIndex'] as int? ?? 0).clamp(
@@ -89,6 +117,13 @@ class AppState extends ChangeNotifier {
     'closeToTray': closeToTray,
     'autoScan': autoScan,
     'blurPreviews': blurPreviews,
+    'suspendVideoInBackground': suspendVideoInBackground,
+    'releasePreviewCache': releasePreviewCache,
+    'reduceMotion': reduceMotion,
+    'previewCacheMiB': previewCacheMiB,
+    'sampleSeconds': sampleSeconds,
+    'windowEffect': windowEffect,
+    'surfaceOpacity': surfaceOpacity,
     'lastScan': lastScan?.toIso8601String(),
     'queue': playback.queue.map((e) => e.toJson()).toList(),
     'queueIndex': playback.index,
@@ -112,6 +147,26 @@ class AppState extends ChangeNotifier {
   void changed() {
     notifyListeners();
     persist();
+  }
+
+  void appearanceApplied({required bool translucent, String? message}) {
+    if (translucentWindow == translucent && appearanceMessage == message) {
+      return;
+    }
+    translucentWindow = translucent;
+    appearanceMessage = message;
+    notifyListeners();
+  }
+
+  void previewOpacityChanged(double value) {
+    surfaceOpacity = value;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    windowVisible.dispose();
+    super.dispose();
   }
 
   void dismissMessage() {
