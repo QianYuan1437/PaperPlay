@@ -300,7 +300,11 @@ class _AppShellState extends State<AppShell> {
                 ],
               ),
             ),
-            PlaybackBar(app: app, openPlayer: () => go(3)),
+            PlaybackBar(
+              app: app,
+              openPlayer: () => go(3),
+              showTimeline: index != 3,
+            ),
           ],
         ),
       );

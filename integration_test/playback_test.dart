@@ -4,6 +4,8 @@ import 'package:flutter/rendering.dart';
 import 'package:paperplay/services/update_service.dart';
 import 'package:paperplay/ui/blur_toggle.dart';
 import 'package:paperplay/ui/performance_page.dart';
+import 'package:paperplay/ui/player_view.dart';
+import 'package:paperplay/ui/playback_timeline.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -51,7 +53,7 @@ void main() {
       final app = AppState(
         LibraryStore(File(p.join(temporary.path, 'library.json'))),
         playback,
-        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.12'}),
+        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.13'}),
       );
       await app.initialize();
       app.autoScan = false;
@@ -184,6 +186,28 @@ void main() {
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull, reason: '$label at $size');
           expect(find.byType(BlurToggle), findsWidgets);
+          if (label == '播放器' && size.width == 1040) {
+            final outsideTimeline = find.descendant(
+              of: find.byType(PlaybackBar),
+              matching: find.byType(PlaybackTimeline),
+            );
+            expect(
+              outsideTimeline,
+              findsNothing,
+              reason:
+                  'The video page must not duplicate its in-picture timeline',
+            );
+            await playback.setAudioOnly(true);
+            await tester.pumpAndSettle();
+            expect(
+              outsideTimeline,
+              findsOneWidget,
+              reason: 'Audio-only mode must retain seeking',
+            );
+            await playback.setAudioOnly(false);
+            await tester.pumpAndSettle();
+            expect(outsideTimeline, findsNothing);
+          }
           final globalAudio = find.byKey(const ValueKey('global-audio-toggle'));
           expect(globalAudio, findsOneWidget);
           expect(
@@ -240,7 +264,17 @@ void main() {
             final title = find.byKey(const ValueKey('playback-title-link'));
             expect(
               tester.getCenter(title).dy,
-              closeTo(tester.getCenter(find.byTooltip('播放').first).dy, 2),
+              closeTo(
+                tester
+                    .getCenter(
+                      find.descendant(
+                        of: find.byType(PlaybackBar),
+                        matching: find.byTooltip('播放'),
+                      ),
+                    )
+                    .dy,
+                2,
+              ),
             );
           }
           if (label == '概览') {
@@ -323,13 +357,23 @@ void main() {
           }
         }
       }
-      await tester.tap(find.byTooltip('播放').first);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(PlaybackBar),
+          matching: find.byTooltip('播放'),
+        ),
+      );
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 200)),
       );
       await tester.pumpAndSettle();
       expect(playback.playing, isTrue);
-      await tester.tap(find.byTooltip('暂停').first);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(PlaybackBar),
+          matching: find.byTooltip('暂停'),
+        ),
+      );
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 200)),
       );
@@ -352,7 +396,7 @@ void main() {
       expect(app.blurPreviews, isTrue);
       await tester.tap(find.byKey(const ValueKey('sidebar-version')));
       await tester.pumpAndSettle();
-      expect(find.text('发现新版本 v1.0.12'), findsOneWidget);
+      expect(find.text('发现新版本 v1.0.13'), findsOneWidget);
       expect(find.text('查看并下载更新'), findsOneWidget);
       await tester.ensureVisible(find.text('关于 PaperPlay'));
       await tester.pumpAndSettle();

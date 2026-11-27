@@ -19,6 +19,10 @@ Windows 上的 **Wallpaper Engine 视频订阅管理器与本地影音播放器*
 - **检查更新**：设置中手动检查 GitHub 最新正式 Release；点击侧栏版本号可直接跳转并检查，发现更新后打开发布页下载；匿名 API 限流时自动使用官方 Release 页面作为备用检查路径。
 - **统一图标**：浅黄色背景、透明外缘、双齿轮轮廓与放大播放符号。应用内、任务栏与托盘图标按播放引擎状态显示三角 / 暂停；桌面快捷方式使用静态品牌图标。
 
+## v1.0.12
+
+修复视频图窗内拖动超过自动隐藏时间后无法跳转的问题：按住或拖动时保持控件可见，松手后才提交一次跳转，支持暂停、播放与全屏。进度条改为图窗内整行显示，扩大鼠标命中区域。播放器视频模式隐藏下方重复进度条；纯音频模式与其他页面保留底栏进度控制。
+
 ## v1.0.11
 
 修复 Windows 视频纹理替换的线程竞争；画面内与底部进度条统一在松手后跳转，连续请求合并，旧视频的拖动不会作用到下一条视频。音频切换保留显示组件，精确跳转跳过中间帧的渲染，切歌不再先重建即将关闭的视频解码器。
@@ -95,7 +99,7 @@ flutter test
 flutter test integration_test/playback_test.dart -d windows --dart-define="TEST_MEDIA=$((Get-Location).Path)/test/fixtures/sample.mp4"
 flutter test integration_test/interaction_test.dart -d windows --dart-define="TEST_MEDIA=$((Get-Location).Path)/test/fixtures/sample.mp4"
 flutter build windows --release
-./tool/package.ps1 -Version 1.0.11
+./tool/package.ps1 -Version 1.0.12
 ```
 
 只保留 `windows/` 平台；Pages 是独立静态介绍站，不是 Flutter Web。测试视频由 FFmpeg 的 `testsrc2` 与 `sine` 合成，不包含用户订阅内容。

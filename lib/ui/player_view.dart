@@ -1,7 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:media_kit/media_kit.dart' show VideoParams;
+import 'package:media_kit/media_kit.dart' show VideoParams, Tracks;
 import 'package:media_kit_video/media_kit_video.dart';
 import '../app_state.dart';
 import '../models/queue_order.dart';
@@ -9,6 +9,7 @@ import '../services/playback_controller.dart';
 import 'widgets.dart';
 import 'playback_timeline.dart';
 import 'marquee_title.dart';
+import 'video_controls_surface.dart';
 
 const modeLabels = {
   PlayMode.sequential: '顺序播放',
@@ -192,8 +193,7 @@ class PlayerView extends StatelessWidget {
   );
 }
 
-/// Keep media_kit's hover/fullscreen behavior, but route every media command
-/// through PaperPlay. Its stock desktop seek bar seeks on every pointer move.
+/// Reuse media_kit's volume/fullscreen buttons with drag-aware hover controls.
 class _VideoControls extends StatelessWidget {
   const _VideoControls({required this.playback, required this.state});
   final PlaybackController playback;
@@ -250,25 +250,7 @@ class _VideoControls extends StatelessWidget {
           onPressed: playback.next,
           icon: const Icon(Icons.skip_next_rounded),
         ),
-        Expanded(
-          child: Theme(
-            data: Theme.of(context).copyWith(
-              textTheme: Theme.of(
-                context,
-              ).textTheme.apply(bodyColor: Colors.white),
-            ),
-            child: PlaybackTimeline(
-              key: ValueKey(
-                'video-timeline-${playback.current?.id}-${playback.index}',
-              ),
-              positionStream: playback.player.stream.position,
-              durationStream: playback.player.stream.duration,
-              initialPosition: playback.player.state.position,
-              initialDuration: playback.player.state.duration,
-              onSeek: playback.seek,
-            ),
-          ),
-        ),
+        const Spacer(),
         const MaterialDesktopVolumeButton(),
         const MaterialDesktopFullscreenButton(),
       ],
@@ -276,15 +258,71 @@ class _VideoControls extends StatelessWidget {
     return MaterialDesktopVideoControlsTheme(
       normal: controls,
       fullscreen: controls,
-      child: MaterialDesktopVideoControls(state),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          VideoControlsSurface(
+            shortcuts: controls.keyboardShortcuts!,
+            onFullscreen: state.toggleFullscreen,
+            onVolumeScroll: (delta) => playback.player.setVolume(
+              (playback.player.state.volume + (delta > 0 ? -5 : 5)).clamp(
+                0,
+                100,
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Theme(
+                  data: Theme.of(context).copyWith(
+                    textTheme: Theme.of(
+                      context,
+                    ).textTheme.apply(bodyColor: Colors.white),
+                  ),
+                  child: PlaybackTimeline(
+                    key: ValueKey(
+                      'video-timeline-${playback.current?.id}-${playback.index}',
+                    ),
+                    height: 40,
+                    positionStream: playback.player.stream.position,
+                    durationStream: playback.player.stream.duration,
+                    initialPosition: playback.player.state.position,
+                    initialDuration: playback.player.state.duration,
+                    onSeek: playback.seek,
+                  ),
+                ),
+                SizedBox(
+                  height: 40,
+                  child: Row(children: controls.bottomButtonBar),
+                ),
+              ],
+            ),
+          ),
+          IgnorePointer(
+            child: StreamBuilder<bool>(
+              stream: playback.player.stream.buffering,
+              initialData: playback.player.state.buffering,
+              builder: (context, snapshot) => snapshot.data == true
+                  ? const Center(child: CircularProgressIndicator())
+                  : const SizedBox.shrink(),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class PlaybackBar extends StatelessWidget {
-  const PlaybackBar({super.key, required this.app, required this.openPlayer});
+  const PlaybackBar({
+    super.key,
+    required this.app,
+    required this.openPlayer,
+    this.showTimeline = true,
+  });
   final AppState app;
   final VoidCallback openPlayer;
+  final bool showTimeline;
   @override
   Widget build(BuildContext context) {
     final playback = app.playback;
@@ -311,15 +349,43 @@ class PlaybackBar extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              PlaybackTimeline(
-                key: ValueKey('${item?.id}-${playback.index}'),
-                positionStream: playback.player.stream.position,
-                durationStream: playback.player.stream.duration,
-                initialPosition: playback.player.state.position,
-                initialDuration: playback.player.state.duration,
-                onSeek: playback.seek,
+              StreamBuilder<Tracks>(
+                stream: playback.player.stream.tracks,
+                initialData: playback.player.state.tracks,
+                builder: (context, parameters) {
+                  final hasVideo =
+                      parameters.data?.video.any(
+                        (track) => track.id != 'auto' && track.id != 'no',
+                      ) ==
+                      true;
+                  final hasAudio =
+                      parameters.data?.audio.any(
+                        (track) => track.id != 'auto' && track.id != 'no',
+                      ) ==
+                      true;
+                  final show =
+                      showTimeline ||
+                      playback.audioOnly ||
+                      item?.isAudio == true ||
+                      (!hasVideo && hasAudio);
+                  if (!show) return const SizedBox.shrink();
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      PlaybackTimeline(
+                        // Other pages and audio-only playback still need a timeline.
+                        key: ValueKey('${item?.id}-${playback.index}'),
+                        positionStream: playback.player.stream.position,
+                        durationStream: playback.player.stream.duration,
+                        initialPosition: playback.player.state.position,
+                        initialDuration: playback.player.state.duration,
+                        onSeek: playback.seek,
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  );
+                },
               ),
-              const SizedBox(height: 8),
               Row(
                 children: [
                   InkWell(

@@ -12,10 +12,12 @@ class PlaybackTimeline extends StatefulWidget {
     required this.initialPosition,
     required this.initialDuration,
     required this.onSeek,
+    this.height = 24,
   });
   final Stream<Duration> positionStream, durationStream;
   final Duration initialPosition, initialDuration;
   final ValueChanged<Duration> onSeek;
+  final double height;
   @override
   State<PlaybackTimeline> createState() => _PlaybackTimelineState();
 }
@@ -98,7 +100,7 @@ class _PlaybackTimelineState extends State<PlaybackTimeline> {
     final timeWidth = clockLabel(_duration).length * textSize + 4;
     return SizedBox(
       width: double.infinity,
-      height: (textSize * 1.6).clamp(24.0, double.infinity),
+      height: (textSize * 1.6).clamp(widget.height, double.infinity),
       child: RepaintBoundary(
         child: Row(
           children: [
@@ -113,7 +115,7 @@ class _PlaybackTimelineState extends State<PlaybackTimeline> {
             ),
             Expanded(
               child: SizedBox(
-                height: 18,
+                height: double.infinity,
                 child: Slider(
                   value: value,
                   max: max > 0 ? max : 1,
