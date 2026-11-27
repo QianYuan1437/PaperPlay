@@ -9,6 +9,7 @@ PaperPlay application code is Copyright (c) 2026 QianYuan1437, MIT licensed (see
 ## Playback and desktop dependencies
 
 - [media_kit](https://github.com/media-kit/media-kit), media_kit_video and media_kit_libs_windows_video: Copyright © 2021 & onwards, Hitesh Kumar Saini; MIT for the Dart/Flutter wrapper. Native libraries have separate licenses.
+  PaperPlay backports the Windows texture synchronization portions of [PR #1468](https://github.com/media-kit/media-kit/pull/1468), contributed by freeKC under MIT, to media_kit_video 2.0.1. The modified sources, provenance and license are in `windows/third_party/media_kit_video/`.
 - [window_manager](https://github.com/leanflutter/window_manager) and [tray_manager](https://github.com/leanflutter/tray_manager): LeanFlutter contributors, MIT.
 - [file_picker](https://github.com/miguelpruivo/flutter_file_picker): MIT.
 - [flutter_acrylic](https://github.com/alexmercerind/flutter_acrylic) 1.1.4: Hitesh Kumar Saini and contributors, MIT. Used for native Windows transparency, acrylic and mica; its license is included in the packaged dependency notices.

@@ -5,6 +5,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../models/media_entry.dart';
 import '../models/queue_order.dart';
+import '../models/video_loading.dart';
 import 'playback_diagnostics.dart';
 
 class PlaybackController extends ChangeNotifier {
@@ -61,6 +62,11 @@ class PlaybackController extends ChangeNotifier {
   bool _opening = false;
   bool _loaded = false;
   bool _closing = false;
+  VideoLoading loadingMode = VideoLoading.memory;
+  int videoCacheMiB = 256;
+  int _mediaGeneration = 0;
+  int _seekRevision = 0;
+  bool _loadingConfigured = false;
   Future<void>? _shutdown;
   String? error;
   VoidCallback? onPersist;
@@ -137,6 +143,8 @@ class PlaybackController extends ChangeNotifier {
       });
 
   Future<void> _open() async {
+    _mediaGeneration++;
+    _seekRevision++;
     _opening = true;
     _loaded = false;
     _resumeAfterSuppression = false;
@@ -151,7 +159,13 @@ class PlaybackController extends ChangeNotifier {
           _diagnostics.reset();
           // Probe with video available, while paused. Opening a silent video
           // with vid=no makes mpv report EOF and incorrectly skip the queue.
-          await player.setVideoTrack(VideoTrack.auto());
+          if (!_loadingConfigured) await _configureLoading();
+          // Stop first: re-enabling video on the outgoing audio-only file
+          // would initialize its decoder just before throwing it away.
+          if (player.state.track.video.id == 'no') {
+            await player.stop();
+            await player.setVideoTrack(VideoTrack.auto());
+          }
           await player.open(Media(item.path), play: false);
           _loaded = true;
           if (videoDisabled) {
@@ -202,6 +216,47 @@ class PlaybackController extends ChangeNotifier {
       if (videoDisabled) await _applyVideoPolicy();
     }
   });
+
+  Future<void> setLoading(VideoLoading value, {int? cacheMiB}) =>
+      _serial(() async {
+        loadingMode = value;
+        if ([128, 256, 512].contains(cacheMiB)) videoCacheMiB = cacheMiB!;
+        await _configureLoading();
+        _changed();
+      });
+
+  Future<void> _configureLoading() async {
+    final native = player.platform;
+    if (native is NativePlayer) {
+      for (final entry in videoLoadingProperties(
+        loadingMode,
+        videoCacheMiB,
+      ).entries) {
+        await native.setProperty(entry.key, entry.value);
+      }
+    }
+    _loadingConfigured = true;
+  }
+
+  /// Both timelines and keyboard shortcuts share the media command queue.
+  /// Drop superseded seeks and never apply an old drag to a newly opened file.
+  Future<void> seek(Duration position) {
+    final generation = _mediaGeneration;
+    final revision = ++_seekRevision;
+    return _serial(() async {
+      if (!_loaded ||
+          generation != _mediaGeneration ||
+          revision != _seekRevision) {
+        return;
+      }
+      final duration = player.state.duration;
+      if (duration <= Duration.zero) return;
+      final target = Duration(
+        milliseconds: position.inMilliseconds.clamp(0, duration.inMilliseconds),
+      );
+      await player.seek(target);
+    });
+  }
 
   Future<void> next({bool manual = true}) => _serial(() async {
     final next = nextIndex(
@@ -291,6 +346,7 @@ class PlaybackController extends ChangeNotifier {
     _changed();
   });
   Future<void> clear() => _serial(() async {
+    _mediaGeneration++;
     _resumeAfterSuppression = false;
     await player.stop();
     queue.clear();

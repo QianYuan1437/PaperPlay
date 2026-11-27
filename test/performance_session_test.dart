@@ -5,6 +5,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:paperplay/app_state.dart';
 import 'package:paperplay/models/media_entry.dart';
 import 'package:paperplay/models/queue_order.dart';
+import 'package:paperplay/models/video_loading.dart';
 import 'package:paperplay/services/library_store.dart';
 import 'package:paperplay/services/performance_monitor.dart';
 import 'package:paperplay/services/playback_controller.dart';
@@ -17,6 +18,10 @@ class _Player implements Player {
 }
 
 class _Playback extends ChangeNotifier implements PlaybackController {
+  @override
+  VideoLoading loadingMode = VideoLoading.memory;
+  @override
+  int videoCacheMiB = 256;
   @override
   final Player player = _Player();
   @override

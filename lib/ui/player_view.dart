@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart' show VideoParams;
 import 'package:media_kit_video/media_kit_video.dart';
 import '../app_state.dart';
@@ -112,7 +113,7 @@ class PlayerView extends StatelessWidget {
                                 ),
                               )
                             else
-                              AdaptiveVideoControls(state),
+                              _VideoControls(playback: playback, state: state),
                           ],
                         ),
                       ),
@@ -191,6 +192,95 @@ class PlayerView extends StatelessWidget {
   );
 }
 
+/// Keep media_kit's hover/fullscreen behavior, but route every media command
+/// through PaperPlay. Its stock desktop seek bar seeks on every pointer move.
+class _VideoControls extends StatelessWidget {
+  const _VideoControls({required this.playback, required this.state});
+  final PlaybackController playback;
+  final VideoState state;
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: playback,
+    builder: (context, _) => _buildControls(context),
+  );
+
+  Widget _buildControls(BuildContext context) {
+    final controls = MaterialDesktopVideoControlsThemeData(
+      displaySeekBar: false,
+      keyboardShortcuts: {
+        const SingleActivator(LogicalKeyboardKey.space): playback.toggle,
+        const SingleActivator(LogicalKeyboardKey.mediaPlayPause):
+            playback.toggle,
+        const SingleActivator(LogicalKeyboardKey.mediaTrackNext): playback.next,
+        const SingleActivator(LogicalKeyboardKey.mediaTrackPrevious):
+            playback.previous,
+        const SingleActivator(LogicalKeyboardKey.arrowLeft): () => playback
+            .seek(playback.player.state.position - const Duration(seconds: 5)),
+        const SingleActivator(LogicalKeyboardKey.arrowRight): () => playback
+            .seek(playback.player.state.position + const Duration(seconds: 5)),
+        const SingleActivator(LogicalKeyboardKey.arrowUp): () => playback.player
+            .setVolume((playback.player.state.volume + 5).clamp(0, 100)),
+        const SingleActivator(LogicalKeyboardKey.arrowDown): () => playback
+            .player
+            .setVolume((playback.player.state.volume - 5).clamp(0, 100)),
+        const SingleActivator(LogicalKeyboardKey.keyF): () =>
+            state.toggleFullscreen(),
+        const SingleActivator(LogicalKeyboardKey.escape): () =>
+            state.exitFullscreen(),
+      },
+      bottomButtonBarMargin: const EdgeInsets.symmetric(horizontal: 10),
+      bottomButtonBar: [
+        IconButton(
+          tooltip: '上一首',
+          color: Colors.white,
+          onPressed: playback.previous,
+          icon: const Icon(Icons.skip_previous_rounded),
+        ),
+        IconButton(
+          tooltip: playback.playing ? '暂停' : '播放',
+          color: Colors.white,
+          onPressed: playback.toggle,
+          icon: Icon(
+            playback.playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+          ),
+        ),
+        IconButton(
+          tooltip: '下一首',
+          color: Colors.white,
+          onPressed: playback.next,
+          icon: const Icon(Icons.skip_next_rounded),
+        ),
+        Expanded(
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              textTheme: Theme.of(
+                context,
+              ).textTheme.apply(bodyColor: Colors.white),
+            ),
+            child: PlaybackTimeline(
+              key: ValueKey(
+                'video-timeline-${playback.current?.id}-${playback.index}',
+              ),
+              positionStream: playback.player.stream.position,
+              durationStream: playback.player.stream.duration,
+              initialPosition: playback.player.state.position,
+              initialDuration: playback.player.state.duration,
+              onSeek: playback.seek,
+            ),
+          ),
+        ),
+        const MaterialDesktopVolumeButton(),
+        const MaterialDesktopFullscreenButton(),
+      ],
+    );
+    return MaterialDesktopVideoControlsTheme(
+      normal: controls,
+      fullscreen: controls,
+      child: MaterialDesktopVideoControls(state),
+    );
+  }
+}
+
 class PlaybackBar extends StatelessWidget {
   const PlaybackBar({super.key, required this.app, required this.openPlayer});
   final AppState app;
@@ -204,8 +294,13 @@ class PlaybackBar extends StatelessWidget {
         final colors = Theme.of(context).colorScheme;
         final item = playback.current;
         return Container(
+          key: const ValueKey('playback-bar-surface'),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardTheme.color,
+            // The shell already paints the configured translucent surface.
+            // Painting another alpha layer here made the bar almost opaque.
+            color: app.translucentWindow
+                ? Colors.transparent
+                : Theme.of(context).cardTheme.color,
             border: Border(
               top: BorderSide(
                 color: colors.outlineVariant.withValues(alpha: 0.5),
@@ -222,7 +317,7 @@ class PlaybackBar extends StatelessWidget {
                 durationStream: playback.player.stream.duration,
                 initialPosition: playback.player.state.position,
                 initialDuration: playback.player.state.duration,
-                onSeek: playback.player.seek,
+                onSeek: playback.seek,
               ),
               const SizedBox(height: 8),
               Row(

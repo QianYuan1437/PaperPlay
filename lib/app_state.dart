@@ -3,6 +3,7 @@ import 'dart:isolate';
 import 'package:flutter/material.dart';
 import 'models/media_entry.dart';
 import 'models/queue_order.dart';
+import 'models/video_loading.dart';
 import 'services/library_store.dart';
 import 'services/update_service.dart';
 import 'services/playback_controller.dart';
@@ -104,6 +105,13 @@ class AppState extends ChangeNotifier {
         data['playMode'] as String? ?? 'repeatAll',
       );
       playback.audioOnly = data['audioOnly'] as bool? ?? false;
+      playback.loadingMode = data['videoLoading'] == 'disk'
+          ? VideoLoading.disk
+          : VideoLoading.memory;
+      final videoCache = data['videoCacheMiB'];
+      playback.videoCacheMiB = [128, 256, 512].contains(videoCache)
+          ? videoCache as int
+          : 256;
       restoredVolume = (data['volume'] as num? ?? 70).toDouble().clamp(0, 100);
     } catch (e) {
       message = '部分设置无法恢复：$e';
@@ -142,6 +150,8 @@ class AppState extends ChangeNotifier {
     'queueIndex': playback.index,
     'playMode': playback.mode.name,
     'audioOnly': playback.audioOnly,
+    'videoLoading': playback.loadingMode.name,
+    'videoCacheMiB': playback.videoCacheMiB,
     'volume': playback.player.state.volume,
   };
   void persist() {

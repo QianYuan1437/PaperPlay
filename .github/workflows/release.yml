@@ -7,7 +7,7 @@ on:
       version:
         description: 'Release version (X.Y.Z); creates a new immutable version tag'
         required: true
-        default: '1.0.10'
+        default: '1.0.11'
 permissions:
   contents: write
 concurrency:
@@ -61,6 +61,12 @@ jobs:
         run: flutter test integration_test/restore_playback_test.dart -d windows --dart-define="TEST_MEDIA=${{ github.workspace }}/test/fixtures/sample.mp4"
       - name: Audio to video surface regression
         run: flutter test integration_test/audio_switch_test.dart -d windows --dart-define="TEST_MEDIA=${{ github.workspace }}/test/fixtures/sample.mp4"
+      - name: Video texture and seek stress regression
+        run: flutter test integration_test/video_stress_test.dart -d windows
+      - name: Video surface drag regression
+        run: flutter test integration_test/video_seek_controls_test.dart -d windows
+      - name: Bounded loading and transparency regression
+        run: flutter test integration_test/large_media_test.dart -d windows
       - name: Codec diagnostic and failed-media regression
         run: flutter test integration_test/codec_diagnostic_test.dart -d windows
       - name: Verify audio playback flicker fix

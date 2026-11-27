@@ -3,12 +3,19 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paperplay/app_state.dart';
+import 'package:paperplay/models/video_loading.dart';
 import 'package:paperplay/services/library_store.dart';
 import 'package:paperplay/services/playback_controller.dart';
 import 'package:paperplay/ui/settings_page.dart';
 import 'package:paperplay/ui/theme.dart';
 
 class _Playback extends ChangeNotifier implements PlaybackController {
+  @override
+  VideoLoading loadingMode = VideoLoading.memory;
+  @override
+  int videoCacheMiB = 256;
+  @override
+  Future<void> setLoading(VideoLoading value, {int? cacheMiB}) async {}
   @override
   VoidCallback? onPersist;
   @override

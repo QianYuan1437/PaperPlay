@@ -19,6 +19,12 @@ Windows 上的 **Wallpaper Engine 视频订阅管理器与本地影音播放器*
 - **检查更新**：设置中手动检查 GitHub 最新正式 Release；点击侧栏版本号可直接跳转并检查，发现更新后打开发布页下载；匿名 API 限流时自动使用官方 Release 页面作为备用检查路径。
 - **统一图标**：浅黄色背景、透明外缘、双齿轮轮廓与放大播放符号。应用内、任务栏与托盘图标按播放引擎状态显示三角 / 暂停；桌面快捷方式使用静态品牌图标。
 
+## v1.0.11
+
+修复 Windows 视频纹理替换的线程竞争；画面内与底部进度条统一在松手后跳转，连续请求合并，旧视频的拖动不会作用到下一条视频。音频切换保留显示组件，精确跳转跳过中间帧的渲染，切歌不再先重建即将关闭的视频解码器。
+
+设置与性能页新增「视频加载方式」：硬盘直读采用小缓冲；内存缓存采用 libmpv 异步分段预读，可选 128 / 256 / 512 MB，前向与后向缓存共享该容量预算。针对 500–1500 MB 文件，不整段读入 Dart 内存、不复制到临时硬盘缓存。容量为解复用数据包预算，解码帧、GPU 纹理与界面仍有额外内存开销。底部播放条与全局透明、亚克力、云母共用背景。
+
 ## v1.0.10
 
 修复媒体正常播放时播放条残留 `Could not open codec` 的误报：解码诊断先验证播放进度与视频输出，恢复后清除；真正的无视频输出、无音频解码或文件损坏仍显示错误。清空队列、切换文件取消旧诊断；跳过丢失文件后不会污染下一条正常视频。正常播放完成后照常前进，不会被非致命驱动诊断阻断。
@@ -89,7 +95,7 @@ flutter test
 flutter test integration_test/playback_test.dart -d windows --dart-define="TEST_MEDIA=$((Get-Location).Path)/test/fixtures/sample.mp4"
 flutter test integration_test/interaction_test.dart -d windows --dart-define="TEST_MEDIA=$((Get-Location).Path)/test/fixtures/sample.mp4"
 flutter build windows --release
-./tool/package.ps1 -Version 1.0.10
+./tool/package.ps1 -Version 1.0.11
 ```
 
 只保留 `windows/` 平台；Pages 是独立静态介绍站，不是 Flutter Web。测试视频由 FFmpeg 的 `testsrc2` 与 `sine` 合成，不包含用户订阅内容。
