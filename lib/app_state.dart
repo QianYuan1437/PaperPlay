@@ -37,6 +37,7 @@ class AppState extends ChangeNotifier {
   ThemeMode themeMode = ThemeMode.system;
   int accent = kDefaultAccent;
   bool closeToTray = true;
+  bool privacyMode = false;
   bool autoScan = true;
   bool blurPreviews = false;
   bool suspendVideoInBackground = true;
@@ -74,6 +75,7 @@ class AppState extends ChangeNotifier {
       accent = data['accent'] as int? ?? kDefaultAccent;
       themeMode = ThemeMode.values.byName(data['theme'] as String? ?? 'system');
       closeToTray = data['closeToTray'] as bool? ?? true;
+      privacyMode = data['privacyMode'] as bool? ?? false;
       autoScan = data['autoScan'] as bool? ?? true;
       blurPreviews = data['blurPreviews'] as bool? ?? false;
       suspendVideoInBackground =
@@ -135,6 +137,7 @@ class AppState extends ChangeNotifier {
     'accent': accent,
     'theme': themeMode.name,
     'closeToTray': closeToTray,
+    'privacyMode': privacyMode,
     'autoScan': autoScan,
     'blurPreviews': blurPreviews,
     'suspendVideoInBackground': suspendVideoInBackground,

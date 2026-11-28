@@ -45,6 +45,8 @@ class DesktopService with WindowListener, TrayListener, WidgetsBindingObserver {
     app.addListener(_onSettingsChanged);
     _onSettingsChanged();
     await windowManager.setPreventClose(true);
+    // Keep taskbar hover captions independent of the current media metadata.
+    await windowManager.setTitle('PaperPlay');
     try {
       await trayManager.setIcon('assets/tray.ico');
       await trayManager.setToolTip('PaperPlay · 你的私人影音库');
@@ -67,6 +69,7 @@ class DesktopService with WindowListener, TrayListener, WidgetsBindingObserver {
       unawaited(app.playback.setBackgroundVideoSuppressed(suspend));
     }
     unawaited(syncAppearance());
+    unawaited(syncPlaybackIndicator());
     _syncDisplaySleep();
   }
 
@@ -96,7 +99,9 @@ class DesktopService with WindowListener, TrayListener, WidgetsBindingObserver {
   Future<void> syncPlaybackIndicator() {
     if (!trayReady || _quitting || _disposed) return Future.value();
     final playing = app.playback.playing;
-    final title = app.playback.current?.title ?? '你的私人影音库';
+    final title = app.privacyMode
+        ? ''
+        : app.playback.current?.title ?? '你的私人影音库';
     if (_requestedPlaying == playing && _requestedTitle == title) {
       return _indicatorUpdates;
     }
@@ -105,11 +110,13 @@ class DesktopService with WindowListener, TrayListener, WidgetsBindingObserver {
     _indicatorUpdates = _indicatorUpdates
         .then((_) async {
           if (_quitting || _disposed) return;
+          if (_requestedPlaying != playing || _requestedTitle != title) return;
           final icon = playing ? 'assets/tray_playing.ico' : 'assets/tray.ico';
           await trayManager.setIcon(icon);
           await windowManager.setIcon(icon);
           await trayManager.setToolTip(
-            'PaperPlay · ${playing ? '正在播放' : '已暂停'} · $title',
+            'PaperPlay · ${playing ? '正在播放' : '已暂停'}'
+            '${app.privacyMode ? '' : ' · $title'}',
           );
           await trayManager.setContextMenu(
             Menu(

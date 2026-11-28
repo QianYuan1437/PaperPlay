@@ -53,7 +53,7 @@ void main() {
       final app = AppState(
         LibraryStore(File(p.join(temporary.path, 'library.json'))),
         playback,
-        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.13'}),
+        updates: UpdateService(fetch: () async => {'tag_name': 'v1.0.14'}),
       );
       await app.initialize();
       app.autoScan = false;
@@ -325,6 +325,23 @@ void main() {
             expect(tester.widget<SwitchListTile>(audioSwitch).value, isFalse);
             expect(playback.player.state.track.video.id, isNot('no'));
 
+            final privacy = find.byKey(const ValueKey('settings-privacy-mode'));
+            await tester.ensureVisible(privacy);
+            await tester.pumpAndSettle();
+            await tester.tap(privacy);
+            await tester.pumpAndSettle();
+            expect(app.privacyMode, isTrue);
+            await desktop.syncPlaybackIndicator();
+            await windowManager.minimize();
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 200)),
+            );
+            expect(await windowManager.getTitle(), 'PaperPlay');
+            await desktop.show();
+            await tester.tap(privacy);
+            await tester.pumpAndSettle();
+            expect(app.privacyMode, isFalse);
+
             expect(
               tester
                   .getTopLeft(find.byKey(const ValueKey('settings-updates')))
@@ -396,7 +413,7 @@ void main() {
       expect(app.blurPreviews, isTrue);
       await tester.tap(find.byKey(const ValueKey('sidebar-version')));
       await tester.pumpAndSettle();
-      expect(find.text('发现新版本 v1.0.13'), findsOneWidget);
+      expect(find.text('发现新版本 v1.0.14'), findsOneWidget);
       expect(find.text('查看并下载更新'), findsOneWidget);
       await tester.ensureVisible(find.text('关于 PaperPlay'));
       await tester.pumpAndSettle();

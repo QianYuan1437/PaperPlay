@@ -157,6 +157,15 @@ class SettingsPage extends StatelessWidget {
         child: Column(
           children: [
             SwitchListTile(
+              key: const ValueKey('settings-privacy-mode'),
+              title: const Text('隐私模式'),
+              value: app.privacyMode,
+              onChanged: (value) {
+                app.privacyMode = value;
+                app.changed();
+              },
+            ),
+            SwitchListTile(
               title: const Text('关闭窗口时收起到托盘'),
               value: app.closeToTray,
               onChanged: (v) {
